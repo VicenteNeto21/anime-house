@@ -1,0 +1,179 @@
+/* Design System: Modern SaaS Streaming (Better Anime Inspired) */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #0f172a;
+    --bg-card: #161f2e;
+    --accent-blue: #3b82f6;
+    --accent-blue-hover: #2563eb;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --border-color: rgba(255, 255, 255, 0.08);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-blue);
+}
+
+/* Glassmorphism */
+.nav-glass {
+    background: rgba(10, 15, 28, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Anime Card Styles (Horizontal 16:9) */
+.anime-card {
+    background: transparent; /* Fundo transparente pois o título fica fora */
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anime-card .img-container {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px; /* Cantos menos arredondados igual a imagem */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s ease;
+}
+
+.anime-card:hover .img-container {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    transform: translateY(-5px);
+}
+
+.anime-card .img-container {
+    position: relative;
+}
+
+.anime-card .img-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10, 15, 28, 0.7) 0%, transparent 40%);
+    opacity: 0.8;
+}
+
+.anime-card img {
+    transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.anime-card:hover img {
+    transform: scale(1.1);
+    filter: brightness(1.1);
+}
+
+.glass-badge {
+    background: rgba(10, 15, 28, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.badge-leg { background: rgba(59, 130, 246, 0.85); }
+.badge-hd { background: rgba(30, 41, 59, 0.8); }
+.badge-final { background: rgba(220, 38, 38, 0.85); }
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Hero Section Styles */
+.hero-gradient {
+    background: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+}
+
+.hero-overlay {
+    background: linear-gradient(to right, var(--bg-primary) 0%, rgba(10, 15, 28, 0.4) 100%);
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--accent-blue);
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: var(--accent-blue-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, #161f2e 25%, #1e293b 50%, #161f2e 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Layout Utilities */
+.container-max {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Grid Animations */
+.fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease-out;
+}
+
+.fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}

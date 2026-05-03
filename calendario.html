@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário - Anime House</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#0a0f1c',
+                            card: '#161f2e',
+                            blue: '#3b82f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-brand-bg text-white min-h-screen">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 w-full z-50 nav-glass border-b border-white/5"></nav>
+
+    <!-- Content -->
+    <main class="pt-32 pb-20 container-max">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-600/20 border border-blue-500/30 rounded-2xl flex items-center justify-center text-brand-blue">
+                    <i class="fa-solid fa-calendar-days text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-black tracking-tighter uppercase">Calendário</h1>
+                    <p class="text-slate-400 text-sm">Acompanhe os lançamentos diários atualizados.</p>
+                </div>
+            </div>
+
+            <!-- Day Selector -->
+            <div id="calendar-days" class="flex items-center bg-brand-card/50 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
+                <!-- Days will be injected here -->
+            </div>
+        </div>
+
+        <!-- Airing List -->
+        <div id="airing-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            <!-- Loading Skeletons -->
+            <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+            <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+            <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+            <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+            <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+            <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+        </div>
+    </main>
+
+
+
+    <!-- Footer -->
+    <footer class="bg-brand-bg border-t border-slate-800 py-16 mt-20"></footer>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/calendar-page.js"></script>
+</body>
+
+</html>

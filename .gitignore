@@ -1,0 +1,26 @@
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Project Specific
+.agent/
+scratch/
+_legacy_v1/
+node_modules/
+
+# Credentials (Just in case)
+.env
+*.key
+*.pem

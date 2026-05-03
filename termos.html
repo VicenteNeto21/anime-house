@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termos de Uso - Anime House</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#0a0f1c',
+                            card: '#161f2e',
+                            blue: '#3b82f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-brand-bg text-white min-h-screen">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 w-full z-50 nav-glass border-b border-white/5"></nav>
+
+    <!-- Content -->
+    <main class="pt-32 pb-20 container-max">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="w-12 h-12 bg-blue-600/20 border border-blue-500/30 rounded-2xl flex items-center justify-center text-brand-blue">
+                    <i class="fa-solid fa-file-contract text-xl"></i>
+                </div>
+                <h1 class="text-4xl font-black tracking-tighter uppercase">Termos de Uso</h1>
+            </div>
+
+            <div class="bg-brand-card/30 border border-white/5 rounded-3xl p-8 md:p-12 space-y-8 text-slate-400 leading-relaxed font-medium">
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-4">1. Aceitação dos Termos</h2>
+                    <p>
+                        Ao acessar e utilizar o <strong>Anime House</strong>, você concorda em cumprir e estar vinculado aos seguintes termos e condições de uso. Se você não concorda com qualquer parte destes termos, não deve utilizar nosso site.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-4">2. Natureza do Serviço</h2>
+                    <p>
+                        O <strong>Anime House</strong> atua exclusivamente como um buscador de links de streaming disponíveis publicamente na internet. Não produzimos, não hospedamos e não carregamos nenhum dos conteúdos de vídeo em nossos servidores.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-4">3. Responsabilidade do Usuário</h2>
+                    <p>
+                        O usuário é o único responsável pelo uso que faz do site e das informações nele contidas. É proibido utilizar o site para qualquer finalidade ilegal ou não autorizada.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-4">4. Propriedade Intelectual</h2>
+                    <p>
+                        As marcas, logotipos e design do site são de propriedade do Anime House. Os conteúdos dos animes (imagens, nomes, vídeos) são de propriedade de seus respectivos estúdios e licenciadores.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-4">5. Modificações</h2>
+                    <p>
+                        Reservamo-nos o direito de modificar estes termos a qualquer momento, sem aviso prévio. O uso continuado do site após tais alterações constitui sua aceitação dos novos termos.
+                    </p>
+                </section>
+
+                <div class="p-6 bg-blue-600/10 border border-blue-500/20 rounded-2xl text-sm text-slate-300">
+                    Última atualização: Maio de 2026.
+                </div>
+            </div>
+
+            <div class="mt-12 text-center">
+                <a href="index.html" class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-white transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar para a Home
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-brand-bg border-t border-slate-800 py-16 mt-20"></footer>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+
+</body>
+</html>
