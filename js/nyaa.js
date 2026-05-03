@@ -6,7 +6,7 @@
 
 const NyaaAPI = {
     // Proxy para contornar o bloqueio de CORS do Nyaa.si
-    PROXY: 'https://api.allorigins.win/get?url=',
+    PROXY: 'https://corsproxy.io/?',
     
     async search(query) {
         const targetUrl = `https://nyaa.si/?page=rss&q=${encodeURIComponent(query)}&c=1_2&f=0`;
@@ -14,11 +14,11 @@ const NyaaAPI = {
 
         try {
             const response = await fetch(proxiedUrl);
-            const data = await response.json();
+            const data = await response.text(); // CorsProxy retorna o conteúdo direto
             
             // Parse XML RSS
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+            const xmlDoc = parser.parseFromString(data, "text/xml");
             const items = xmlDoc.getElementsByTagName("item");
             
             const results = [];
