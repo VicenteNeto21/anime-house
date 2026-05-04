@@ -240,26 +240,15 @@ export default function ProfilePage() {
           <div className="w-full h-full bg-gradient-to-br from-blue-900/30 via-slate-900 to-indigo-900/30" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent" />
-        
-        {/* Banner Overlay Controls */}
-        <div className="absolute top-8 right-8 flex gap-3">
-          <button 
-            onClick={handleLogout}
-            className="px-5 py-2.5 bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 backdrop-blur-md rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all group"
-          >
-            <i className="fa-solid fa-power-off mr-2 group-hover:text-rose-500 transition-colors"></i>
-            Sair da Conta
-          </button>
-        </div>
       </div>
 
       <div className="container mx-auto px-4 lg:px-12 -mt-32 relative z-10">
         <div className="grid lg:grid-cols-4 gap-10">
           
           {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 md:space-y-6">
             {/* User Card */}
-            <div className="bg-slate-900/40 border border-white/5 rounded-[32px] p-8 text-center backdrop-blur-xl relative overflow-hidden group">
+            <div className="bg-slate-900/40 border border-white/5 rounded-[24px] md:rounded-[32px] p-6 md:p-8 text-center backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute -top-10 -right-10 w-24 h-24 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-colors"></div>
               
               <div className="relative w-32 h-32 mx-auto rounded-2xl overflow-hidden border-2 border-white/5 mb-6 group-hover:scale-105 transition-transform duration-500">
@@ -267,16 +256,24 @@ export default function ProfilePage() {
               </div>
               
               <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 leading-none">{user.name}</h1>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-2 mb-6">
                 <span className="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
                    Usuário Elite
                 </span>
               </div>
+              
+              <button 
+                onClick={handleLogout}
+                className="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-[10px] font-black text-rose-500 uppercase tracking-widest transition-all group"
+              >
+                <i className="fa-solid fa-power-off mr-2 opacity-70 group-hover:opacity-100"></i> 
+                Sair da Conta
+              </button>
             </div>
 
             {/* Achievements Section */}
-            <div className="bg-slate-900/20 border border-white/5 rounded-[24px] p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-slate-900/20 border border-white/5 rounded-[20px] md:rounded-[24px] p-4 md:p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
                 <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
                   <i className="fa-solid fa-trophy text-amber-500"></i>
                   Conquistas
@@ -289,7 +286,7 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 {/* Desbloqueadas */}
                 {unlockedAchievements.length > 0 && (
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid grid-cols-5 sm:grid-cols-5 gap-2 md:gap-3">
                     {unlockedAchievements.map((ach) => (
                       <div 
                         key={ach.id} 
@@ -300,7 +297,7 @@ export default function ProfilePage() {
                       </div>
                     ))}
                     {Array.from({ length: Math.max(0, 5 - unlockedAchievements.length) }).map((_, i) => (
-                      <div key={i} className="aspect-square rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center opacity-30">
+                      <div key={i} className="aspect-square rounded-xl md:rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center opacity-30">
                         <i className="fa-solid fa-lock text-[10px] text-slate-600"></i>
                       </div>
                     ))}
@@ -326,8 +323,8 @@ export default function ProfilePage() {
             </div>
 
             {/* DNA de Anime */}
-            <div className="bg-slate-900/20 border border-white/5 rounded-[24px] p-6 backdrop-blur-sm">
-              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
+            <div className="bg-slate-900/20 border border-white/5 rounded-[20px] md:rounded-[24px] p-4 md:p-6 backdrop-blur-sm">
+              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-4 md:mb-6 flex items-center gap-3">
                 <i className="fa-solid fa-dna text-blue-500"></i>
                 DNA de Anime
               </h3>
@@ -354,18 +351,18 @@ export default function ProfilePage() {
           </div>
 
           {/* Main Area */}
-          <div className="lg:col-span-3 space-y-10">
+          <div className="lg:col-span-3 space-y-6 md:space-y-10">
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
               {[
                 { label: 'Animes Assistidos', value: user.statistics?.anime?.count || 0, icon: 'fa-tv', color: 'text-blue-500', bg: 'bg-blue-500/10' },
                 { label: 'Total de Episódios', value: user.statistics?.anime?.episodesWatched || 0, icon: 'fa-film', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 { label: 'Nota Média', value: `${user.statistics?.anime?.meanScore || 0}%`, icon: 'fa-star', color: 'text-amber-500', bg: 'bg-amber-500/10' },
                 { label: 'Tempo Assistido', value: `${Math.floor((user.statistics?.anime?.minutesWatched || 0) / 1440)}d`, icon: 'fa-clock', color: 'text-rose-500', bg: 'bg-rose-500/10' },
               ].map((stat, i) => (
-                <div key={i} className="p-6 bg-slate-900/30 border border-white/5 rounded-[24px] backdrop-blur-md hover:bg-slate-900/50 transition-all border-b-2 hover:border-b-blue-500/30">
+                <div key={i} className="p-4 md:p-6 bg-slate-900/30 border border-white/5 rounded-[20px] md:rounded-[24px] backdrop-blur-md hover:bg-slate-900/50 transition-all border-b-2 hover:border-b-blue-500/30">
                   <div className="flex flex-col items-center text-center">
-                    <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3 border border-white/5`}>
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl ${stat.bg} flex items-center justify-center mb-2 md:mb-3 border border-white/5`}>
                       <i className={`fa-solid ${stat.icon} ${stat.color} text-sm`}></i>
                     </div>
                     <h3 className="text-xl font-black text-white leading-none tracking-tighter mb-1">{stat.value}</h3>
@@ -377,8 +374,8 @@ export default function ProfilePage() {
 
             {/* Favorite Characters */}
             {user.favourites?.characters?.nodes?.length > 0 && (
-              <section className="bg-slate-900/20 border border-white/5 rounded-[32px] p-6 backdrop-blur-sm">
-                <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
+              <section className="bg-slate-900/20 border border-white/5 rounded-[24px] md:rounded-[32px] p-4 md:p-6 backdrop-blur-sm overflow-hidden">
+                <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-4 md:mb-6 flex items-center gap-3">
                    <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
                    Squad Favorito
                 </h3>
@@ -418,58 +415,62 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-2">
                 {currentList.length > 0 ? (
                   currentList.map((entry: any) => (
-                    <div key={entry.id} className="group flex items-center gap-4 bg-slate-900/30 hover:bg-slate-800/50 border border-white/5 hover:border-blue-500/20 rounded-2xl p-3 transition-all duration-300">
-                      {/* Thumbnail */}
-                      <Link href={`/anime/${entry.media.id}`} className="relative w-14 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-slate-800">
-                        <img src={entry.media.coverImage.large} alt={entry.media.title.romaji} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                      </Link>
-
-                      {/* Info */}
-                      <div className="flex-grow min-w-0">
-                        <Link href={`/anime/${entry.media.id}`} className="block">
-                          <h3 className="text-[12px] font-black text-white uppercase tracking-tight truncate group-hover:text-blue-400 transition-colors leading-tight">
-                            {entry.media.title.romaji}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{entry.media.format}</span>
-                            {entry.media.averageScore && (
-                              <span className="text-[8px] font-black text-amber-500/70">★ {entry.media.averageScore}%</span>
-                            )}
-                          </div>
+                    <div key={entry.id} className="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 bg-slate-900/30 hover:bg-slate-800/50 border border-white/5 hover:border-blue-500/20 rounded-2xl p-2.5 sm:p-3 transition-all duration-300">
+                      
+                      {/* Top part on mobile: Thumbnail + Info */}
+                      <div className="flex items-center gap-3 sm:gap-4 flex-grow min-w-0">
+                        {/* Thumbnail */}
+                        <Link href={`/anime/${entry.media.id}`} className="relative w-12 h-16 sm:w-14 sm:h-20 flex-shrink-0 rounded-lg sm:rounded-xl overflow-hidden bg-slate-800">
+                          <img src={entry.media.coverImage.large} alt={entry.media.title.romaji} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         </Link>
-                        {/* Progress Bar */}
-                        <div className="flex items-center gap-3 mt-2">
-                          <div className="flex-grow h-1.5 bg-slate-950 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-                              style={{ width: `${(entry.progress / (entry.media.episodes || Math.max(entry.progress, 1))) * 100}%` }} 
-                            />
+
+                        {/* Info */}
+                        <div className="flex-grow min-w-0">
+                          <Link href={`/anime/${entry.media.id}`} className="block">
+                            <h3 className="text-[11px] sm:text-[12px] font-black text-white uppercase tracking-tight truncate group-hover:text-blue-400 transition-colors leading-tight">
+                              {entry.media.title.romaji}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[7px] sm:text-[8px] font-black text-slate-600 uppercase tracking-widest">{entry.media.format}</span>
+                              {entry.media.averageScore && (
+                                <span className="text-[7px] sm:text-[8px] font-black text-amber-500/70">★ {entry.media.averageScore}%</span>
+                              )}
+                            </div>
+                          </Link>
+                          {/* Progress Bar */}
+                          <div className="flex items-center gap-3 mt-1.5 sm:mt-2">
+                            <div className="flex-grow h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-600 rounded-full transition-all duration-500" 
+                                style={{ width: `${(entry.progress / (entry.media.episodes || Math.max(entry.progress, 1))) * 100}%` }} 
+                              />
+                            </div>
+                            <span className="text-[9px] sm:text-[10px] font-black text-slate-400 whitespace-nowrap tabular-nums">
+                              {entry.progress}<span className="text-slate-700">/{entry.media.episodes || '??'}</span>
+                            </span>
                           </div>
-                          <span className="text-[10px] font-black text-slate-400 whitespace-nowrap tabular-nums">
-                            {entry.progress}<span className="text-slate-700">/{entry.media.episodes || '??'}</span>
-                          </span>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1.5 sm:gap-1 flex-shrink-0 opacity-100 sm:opacity-50 group-hover:opacity-100 transition-opacity justify-end ml-[60px] sm:ml-0 mt-1 sm:mt-0">
                         <button 
                           onClick={() => handleUpdateProgress(entry.media.id, entry.progress, 1, entry.id)}
                           disabled={updatingId === entry.media.id}
-                          className="w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-blue-600 border border-white/5 text-slate-400 hover:text-white rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
+                          className="w-full sm:w-8 h-7 sm:h-8 flex-1 sm:flex-none flex items-center justify-center bg-blue-600/20 sm:bg-slate-950 hover:bg-blue-600 border border-blue-500/20 sm:border-white/5 text-blue-400 sm:text-slate-400 hover:text-white rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
                         >
                           <i className="fa-solid fa-plus"></i>
                         </button>
                         <button 
                           onClick={() => handleUpdateProgress(entry.media.id, entry.progress, -1, entry.id)}
                           disabled={updatingId === entry.media.id}
-                          className="w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-slate-800 border border-white/5 text-slate-600 hover:text-white rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
+                          className="w-full sm:w-8 h-7 sm:h-8 flex-1 sm:flex-none flex items-center justify-center bg-slate-800 sm:bg-slate-950 hover:bg-slate-700 border border-white/5 text-slate-300 sm:text-slate-600 hover:text-white rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
                         >
                           <i className="fa-solid fa-minus"></i>
                         </button>
                         <button 
                           onClick={() => handleRemoveEntry(entry.id)}
-                          className="w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-rose-600/20 border border-white/5 text-slate-700 hover:text-rose-500 rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
+                          className="w-full sm:w-8 h-7 sm:h-8 flex-1 sm:flex-none flex items-center justify-center bg-rose-500/10 sm:bg-slate-950 hover:bg-rose-600/20 border border-rose-500/20 sm:border-white/5 text-rose-500 sm:text-slate-700 hover:text-rose-400 rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
                         >
                           <i className="fa-solid fa-trash-can"></i>
                         </button>
