@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
@@ -30,7 +31,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <LibraryProvider>
-          <AuthHandler />
+          <Suspense fallback={null}>
+            <AuthHandler />
+          </Suspense>
           <Navbar />
           <main className="flex-grow pt-16">
             {children}
