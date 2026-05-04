@@ -10,6 +10,7 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('anilist_token');
@@ -54,17 +55,13 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-4 text-white/80 border-r border-white/5 pr-5">
+          <div className="flex items-center gap-3 md:gap-5">
+            <div className="flex items-center gap-3 md:gap-4 text-white/80 md:border-r border-white/5 md:pr-5">
               <button 
                 onClick={() => setIsSearchOpen(true)}
                 className="hover:text-[#3b82f6] transition-all hover:scale-110 cursor-pointer"
               >
                 <i className="fa-solid fa-search"></i>
-              </button>
-              
-              <button className="hover:text-[#3b82f6] transition-all hover:scale-110 cursor-pointer">
-                <i className="fa-solid fa-shuffle"></i>
               </button>
             </div>
             
@@ -129,13 +126,47 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link href="/login" className="px-6 py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[10px] font-black rounded-xl transition-all uppercase tracking-widest cursor-pointer active:scale-95">
+              <Link href="/login" className="px-4 md:px-6 py-2 md:py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[9px] md:text-[10px] font-black rounded-xl transition-all uppercase tracking-widest cursor-pointer active:scale-95">
                 Entrar
               </Link>
             )}
+
+            {/* Mobile Hamburger */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/5 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              <i className={`fa-solid ${mobileMenuOpen ? 'fa-xmark' : 'fa-bars'} text-sm`}></i>
+            </button>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[99] bg-[#0a0f1c]/98 backdrop-blur-xl lg:hidden">
+          <div className="flex flex-col items-center justify-center h-full gap-6 pt-16">
+            {[
+              { href: '/', label: 'Início', icon: 'fa-home' },
+              { href: '/lista', label: 'Lista de Animes', icon: 'fa-list' },
+              { href: '/generos', label: 'Gêneros', icon: 'fa-tags' },
+              { href: '/calendario', label: 'Calendário', icon: 'fa-calendar' },
+              { href: '/lista?sort=POPULARITY_DESC', label: 'Top 100', icon: 'fa-trophy' },
+              { href: '/perfil', label: 'Meu Perfil', icon: 'fa-user' },
+            ].map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-4 text-lg font-black text-slate-300 hover:text-blue-400 uppercase tracking-widest transition-colors"
+              >
+                <i className={`fa-solid ${link.icon} text-blue-500 w-6 text-center`}></i>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <SearchModal 
         isOpen={isSearchOpen} 

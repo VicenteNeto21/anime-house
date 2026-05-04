@@ -663,9 +663,9 @@ export default function PlayerPage() {
             <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-3">
               <Link href={`/anime/${id}`} className="hover:text-blue-500 transition-colors">{anime.title}</Link>
             </div>
-            <h1 className="text-xl md:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
-              {anime.title} 
-              <span className="text-blue-500 font-black px-3 py-1 bg-blue-500/10 rounded-xl text-base border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]">EP {currentEp.toString().padStart(2, '0')}</span>
+            <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tighter flex flex-wrap items-center gap-2 md:gap-4">
+              <span className="truncate max-w-[70vw] md:max-w-none">{anime.title}</span>
+              <span className="text-blue-500 font-black px-2 md:px-3 py-1 bg-blue-500/10 rounded-xl text-sm md:text-base border border-blue-500/20">EP {currentEp.toString().padStart(2, '0')}</span>
             </h1>
           </div>
         </div>
@@ -853,21 +853,21 @@ export default function PlayerPage() {
                             {/* Skip -10 */}
                             <button
                               onClick={() => { if (videoRef.current) videoRef.current.currentTime -= 10; }}
-                              className="flex items-center gap-1 px-3 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-[10px] font-black transition-all active:scale-90 border border-white/5"
+                              className="flex items-center gap-1 px-2 sm:px-3 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-[9px] sm:text-[10px] font-black transition-all active:scale-90 border border-white/5"
                             >
-                              <i className="fa-solid fa-backward text-[8px]"></i> 10s
+                              <i className="fa-solid fa-backward text-[8px]"></i> <span className="hidden sm:inline">10s</span>
                             </button>
 
                             {/* Skip +10 */}
                             <button
                               onClick={() => { if (videoRef.current) videoRef.current.currentTime += 10; }}
-                              className="flex items-center gap-1 px-3 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-[10px] font-black transition-all active:scale-90 border border-white/5"
+                              className="flex items-center gap-1 px-2 sm:px-3 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-[9px] sm:text-[10px] font-black transition-all active:scale-90 border border-white/5"
                             >
-                              10s <i className="fa-solid fa-forward text-[8px]"></i>
+                              <span className="hidden sm:inline">10s</span> <i className="fa-solid fa-forward text-[8px]"></i>
                             </button>
 
                             {/* Volume */}
-                            <div className="flex items-center gap-2 ml-2">
+                            <div className="hidden sm:flex items-center gap-2 ml-2">
                               <button onClick={toggleMute} className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-all active:scale-90">
                                 <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : volume < 0.4 ? 'fa-volume-off' : volume < 0.7 ? 'fa-volume-low' : 'fa-volume-high'} text-sm`}></i>
                               </button>
@@ -894,9 +894,9 @@ export default function PlayerPage() {
                             {currentEp > 1 && (
                               <button
                                 onClick={() => changeEpisode(currentEp - 1)}
-                                className="flex items-center gap-1 px-3 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-[10px] font-black transition-all active:scale-90 border border-white/5"
+                                className="flex items-center gap-1 px-2 sm:px-3 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-[9px] sm:text-[10px] font-black transition-all active:scale-90 border border-white/5 flex-shrink-0"
                               >
-                                <i className="fa-solid fa-backward-step"></i> EP {currentEp - 1}
+                                <i className="fa-solid fa-backward-step text-[10px]"></i> <span className="hidden sm:inline">EP </span>{currentEp - 1}
                               </button>
                             )}
 
@@ -904,9 +904,9 @@ export default function PlayerPage() {
                             {currentEp < (Number(anime.episodes) || 9999) && (
                               <button
                                 onClick={() => changeEpisode(currentEp + 1)}
-                                className="flex items-center gap-1 px-3 h-8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 text-[10px] font-black transition-all active:scale-90 border border-cyan-500/30"
+                                className="flex items-center gap-1 px-2 sm:px-3 h-8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 text-[9px] sm:text-[10px] font-black transition-all active:scale-90 border border-cyan-500/30 flex-shrink-0"
                               >
-                                EP {currentEp + 1} <i className="fa-solid fa-forward-step"></i>
+                                <span className="hidden sm:inline">EP </span>{currentEp + 1} <i className="fa-solid fa-forward-step text-[10px]"></i>
                               </button>
                             )}
 
@@ -914,7 +914,7 @@ export default function PlayerPage() {
                             <select
                               value={playbackSpeed}
                               onChange={(e) => handleSpeedChange(Number(e.target.value))}
-                              className="h-8 px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 text-[10px] font-black cursor-pointer focus:outline-none transition-all"
+                              className="hidden sm:block h-8 px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 text-[10px] font-black cursor-pointer focus:outline-none transition-all"
                             >
                               {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => (
                                 <option key={s} value={s} className="bg-slate-900">{s}x</option>
@@ -924,7 +924,7 @@ export default function PlayerPage() {
                             {/* Cinema Mode */}
                             <button
                               onClick={() => setCinemaMode(!cinemaMode)}
-                              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all active:scale-90 text-xs ${cinemaMode ? 'bg-blue-500/30 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                              className={`hidden sm:flex w-8 h-8 items-center justify-center rounded-lg border transition-all active:scale-90 text-xs ${cinemaMode ? 'bg-blue-500/30 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
                               title="Modo Cinema"
                             >
                               <i className="fa-solid fa-film"></i>
@@ -934,7 +934,7 @@ export default function PlayerPage() {
                             {typeof document !== 'undefined' && document.pictureInPictureEnabled && (
                               <button
                                 onClick={togglePiP}
-                                className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all active:scale-90 text-xs ${isPiP ? 'bg-blue-500/30 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                                className={`hidden sm:flex w-8 h-8 items-center justify-center rounded-lg border transition-all active:scale-90 text-xs ${isPiP ? 'bg-blue-500/30 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
                                 title="Picture in Picture"
                               >
                                 <i className="fa-solid fa-clone"></i>
@@ -1028,7 +1028,7 @@ export default function PlayerPage() {
                     <select 
                       value={server}
                       onChange={(e) => setServer(e.target.value)}
-                      className="appearance-none bg-[#161f2e] border border-white/5 rounded-xl px-5 py-3 pr-10 text-[10px] font-black text-slate-300 uppercase tracking-widest focus:outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-[#1c2638]"
+                      className="appearance-none bg-[#161f2e] border border-white/5 rounded-xl px-3 md:px-5 py-2.5 md:py-3 pr-8 md:pr-10 text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-widest focus:outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-[#1c2638] w-full min-w-0"
                     >
                       {[
                         { id: 'direct', label: 'SERVIDOR 1 (DIRETO)' },
@@ -1063,14 +1063,14 @@ export default function PlayerPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => changeEpisode(currentEp - 1)}
-                      className={`flex items-center gap-2 px-5 py-3 bg-[#161f2e] hover:bg-[#1c2638] border border-white/5 rounded-xl text-[10px] font-black text-white uppercase transition-all ${currentEp <= 1 ? 'opacity-20 pointer-events-none' : ''}`}
+                      className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 md:py-3 bg-[#161f2e] hover:bg-[#1c2638] border border-white/5 rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase transition-all ${currentEp <= 1 ? 'opacity-20 pointer-events-none' : ''}`}
                     >
                       <i className="fa-solid fa-chevron-left text-[8px]"></i>
                       Anterior
                     </button>
                     <button
                       onClick={startAutoPlay}
-                      className={`flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-black text-white uppercase transition-all shadow-lg shadow-blue-600/20 ${currentEp >= (Number(anime.episodes) || 0) ? 'opacity-20 pointer-events-none' : ''}`}
+                      className={`flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase transition-all shadow-lg shadow-blue-600/20 ${currentEp >= (Number(anime.episodes) || 0) ? 'opacity-20 pointer-events-none' : ''}`}
                     >
                       Próximo
                       <i className="fa-solid fa-chevron-right text-[8px]"></i>
@@ -1080,7 +1080,7 @@ export default function PlayerPage() {
               </div>
 
               {/* Bottom Action Bar */}
-              <div className="mt-4 pt-8 border-t border-white/5 flex flex-wrap items-center gap-8">
+              <div className="mt-4 pt-6 md:pt-8 border-t border-white/5 flex flex-wrap items-center gap-4 md:gap-8">
                 <button 
                   onClick={() => setCinemaMode(!cinemaMode)}
                   className={`flex items-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all group ${cinemaMode ? 'text-amber-500' : 'text-slate-500 hover:text-amber-500'}`}
@@ -1113,7 +1113,7 @@ export default function PlayerPage() {
 
           {/* Sidebar Episodes */}
           <div className="lg:col-span-1">
-            <div className={`bg-[#0f1524] border border-white/5 rounded-3xl h-[75vh] flex flex-col transition-all duration-700 shadow-2xl ${cinemaMode ? 'opacity-10 hover:opacity-100 translate-x-4 hover:translate-x-0' : ''}`}>
+            <div className={`bg-[#0f1524] border border-white/5 rounded-3xl h-auto max-h-[50vh] lg:h-[75vh] lg:max-h-none flex flex-col transition-all duration-700 shadow-2xl ${cinemaMode ? 'opacity-10 hover:opacity-100 translate-x-4 hover:translate-x-0' : ''}`}>
               <div className="p-6 border-b border-white/5 space-y-6">
                 <AddToList 
                   animeId={Number(anime.id)} 

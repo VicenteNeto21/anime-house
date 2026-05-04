@@ -398,16 +398,16 @@ export default function ProfilePage() {
 
             {/* Tabs & List */}
             <div className="space-y-8">
-              <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-900/40 border border-white/5 rounded-[24px] backdrop-blur-md">
+              <div className="flex items-center gap-2 p-1.5 bg-slate-900/40 border border-white/5 rounded-[24px] backdrop-blur-md overflow-x-auto hide-scrollbar">
                 {tabs.map((tab) => (
                   <button 
                     key={tab.id} 
                     onClick={() => setActiveTab(tab.id)} 
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-[18px] text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                    className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-[18px] text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                   >
                     <i className={`fa-solid ${tab.icon} text-[10px]`}></i>
-                    {tab.label}
-                    <span className={`ml-1 text-[8px] ${activeTab === tab.id ? 'text-blue-200' : 'text-slate-600'}`}>
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className={`text-[8px] ${activeTab === tab.id ? 'text-blue-200' : 'text-slate-600'}`}>
                       ({animeList.find(l => l.status === tab.id)?.entries?.length || 0})
                     </span>
                   </button>

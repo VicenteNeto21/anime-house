@@ -103,6 +103,22 @@ export default function CalendarSection() {
       {/* Content Area */}
       {isOpen && (
         <div className="mt-2 bg-slate-900/40 rounded-xl border border-white/5 overflow-hidden">
+          {/* Mobile day tabs */}
+          <div className="flex md:hidden items-center gap-1 p-2 border-b border-white/5 overflow-x-auto hide-scrollbar">
+            {orderedDays.map((day) => (
+              <button
+                key={day.value}
+                onClick={() => setActiveDay(day.value)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all flex-shrink-0 ${
+                  activeDay === day.value 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-slate-500 hover:text-white bg-white/5'
+                }`}
+              >
+                {day.value === new Date().getDay() ? 'Hoje' : day.label}
+              </button>
+            ))}
+          </div>
           <div className="p-4 overflow-x-auto no-scrollbar">
             <div className="flex gap-4 min-w-max">
               {loading ? (
