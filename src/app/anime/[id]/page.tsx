@@ -152,45 +152,6 @@ export default async function AnimeDetailsPage({
               />
             </section>
 
-            {/* 2. Voice Actors Section (Segundo) */}
-            {anime.characters && anime.characters.length > 0 && (
-              <section>
-                <h2 className="text-xl font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
-                  <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
-                  Dubladores & Personagens
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {anime.characters.map((char: any, i: number) => (
-                    <div key={i} className="flex flex-col bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden group hover:border-blue-500/30 transition-all">
-                      {/* Character Info */}
-                      <div className="flex items-center gap-3 p-3 border-b border-white/5">
-                        <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                          <Image src={char.image} alt={char.name} fill className="object-cover" sizes="40px" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-[10px] font-black text-white uppercase truncate">{char.name}</h4>
-                          <p className="text-[8px] font-bold text-blue-500 uppercase tracking-widest">{char.role}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Voice Actor Info */}
-                      {char.voiceActor && (
-                        <div className="flex items-center justify-end gap-3 p-3 bg-white/[0.02]">
-                          <div className="min-w-0 text-right">
-                            <h4 className="text-[10px] font-black text-slate-300 uppercase truncate group-hover:text-white transition-colors">{char.voiceActor.name}</h4>
-                            <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Dublador</p>
-                          </div>
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                            <Image src={char.voiceActor.image} alt={char.voiceActor.name} fill className="object-cover grayscale group-hover:grayscale-0 transition-all" sizes="40px" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
             {/* 3. Characters & Voice Actors (Novo) */}
             {anime.characters && anime.characters.length > 0 && (
               <section className="mb-16">

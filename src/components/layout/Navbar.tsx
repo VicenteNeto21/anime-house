@@ -35,6 +35,17 @@ export default function Navbar() {
     window.location.reload();
   };
 
+  const getCurrentSeason = () => {
+    const month = new Date().getMonth();
+    if (month < 3) return 'WINTER';
+    if (month < 6) return 'SPRING';
+    if (month < 9) return 'SUMMER';
+    return 'FALL';
+  };
+
+  const currentYear = new Date().getFullYear();
+  const currentSeason = getCurrentSeason();
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#0a0f1c]/90 backdrop-blur-md border-b border-white/5">
@@ -51,7 +62,7 @@ export default function Navbar() {
               <Link href="/generos" className="hover:text-white transition-colors">Gêneros</Link>
               <Link href="/calendario" className="hover:text-white transition-colors">Calendário</Link>
               <Link href="/lista?sort=POPULARITY_DESC" className="hover:text-white transition-colors">Top 100</Link>
-              <Link href="/lista?season=2024" className="hover:text-white transition-colors">Temporada</Link>
+              <Link href={`/lista?year=${currentYear}&season=${currentSeason}`} className="hover:text-white transition-colors">Temporada</Link>
             </div>
           </div>
 
