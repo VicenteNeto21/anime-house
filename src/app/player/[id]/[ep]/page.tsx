@@ -340,6 +340,12 @@ export default function PlayerPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ title: anime.title, episode: currentEp, version })
             });
+            
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(`API retornou ${res.status}: ${text.substring(0, 50)}`);
+            }
+            
             const data = await res.json();
             
             if (data.players && data.players.length > 0) {

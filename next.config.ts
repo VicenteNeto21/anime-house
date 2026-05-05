@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth', 'pino'],
   typescript: {
     ignoreBuildErrors: true, // TypeScript warnings não bloqueiam deploy
   },
