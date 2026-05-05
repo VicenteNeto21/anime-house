@@ -66,13 +66,13 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-5">
+          <div className="flex items-center gap-4 md:gap-5">
             <div className="flex items-center gap-3 md:gap-4 text-white/80 md:border-r border-white/5 md:pr-5">
               <button 
                 onClick={() => setIsSearchOpen(true)}
-                className="hover:text-[#3b82f6] transition-all hover:scale-110 cursor-pointer"
+                className="hover:text-[#3b82f6] transition-all hover:scale-110 cursor-pointer p-1"
               >
-                <i className="fa-solid fa-search"></i>
+                <i className="fa-solid fa-search text-sm"></i>
               </button>
             </div>
             
@@ -137,7 +137,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link href="/login" className="px-4 md:px-6 py-2 md:py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[9px] md:text-[10px] font-black rounded-xl transition-all uppercase tracking-widest cursor-pointer active:scale-95">
+              <Link href="/login" className="px-3.5 md:px-6 py-2 md:py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[8px] md:text-[10px] font-black rounded-xl transition-all uppercase tracking-widest cursor-pointer active:scale-95 whitespace-nowrap">
                 Entrar
               </Link>
             )}

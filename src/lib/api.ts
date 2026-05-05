@@ -200,8 +200,10 @@ export const AniListAPI = {
           if (response.status === 404) {
             return null;
           }
-          const errorText = await response.text();
-          console.error('ANILIST_HTTP_ERROR:', response.status, errorText);
+          // Não logar erros de rede transitórios para não poluir o console
+          if (response.status >= 500) {
+            return cached?.data || null;
+          }
           return cached?.data || null;
         }
 

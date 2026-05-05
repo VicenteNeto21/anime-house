@@ -51,8 +51,8 @@ export default function AddToList({ animeId, totalEpisodes }: AddToListProps) {
       if (data?.MediaList) {
         setUserList(data.MediaList);
       }
-    } catch (error) {
-      console.error('FETCH_STATUS_ERROR:', error);
+    } catch {
+      // AniList indisponível — não é crítico, o botão funciona sem sync
     } finally {
       setLoading(false);
     }

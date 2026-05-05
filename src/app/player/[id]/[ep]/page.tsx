@@ -57,9 +57,12 @@ export default function PlayerPage() {
   const [showControls, setShowControls] = useState(true);
   const [currentTime, setCurrentTime] = useState('00:00');
   const [duration, setDuration] = useState('00:00');
+  const [isNativeType, setIsNativeType] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiPlayers, setAiPlayers] = useState<{name: string, src: string, type?: string}[]>([]);
   const [userAniListInfo, setUserAniListInfo] = useState<any>(null);
   const [hasSynced, setHasSynced] = useState(false);
   const [showSyncToast, setShowSyncToast] = useState(false);
@@ -97,17 +100,19 @@ export default function PlayerPage() {
 
   useEffect(() => {
     async function fetchSyncInfo(force = false) {
-      const token = localStorage.getItem('anilist_token');
-      if (token && id) {
-        const data = await AniListAPI.getMediaListStatus(Number(id), token, force);
-        if (data?.MediaList) {
-          setUserAniListInfo(data.MediaList);
-          // Se o usuário já assistiu este EP, marcamos como sincronizado para não chamar de novo
-          if (data.MediaList.progress >= currentEp) {
-            setHasSynced(true);
+      try {
+        const token = localStorage.getItem('anilist_token');
+        if (token && id) {
+          const data = await AniListAPI.getMediaListStatus(Number(id), token, force);
+          if (data?.MediaList) {
+            setUserAniListInfo(data.MediaList);
+            // Se o usuário já assistiu este EP, marcamos como sincronizado para não chamar de novo
+            if (data.MediaList.progress >= currentEp) {
+              setHasSynced(true);
+            }
           }
         }
-      }
+      } catch { /* AniList indisponível — não é crítico */ }
     }
     fetchSyncInfo(false); // Usa cache na carga inicial
     setHasSynced(false); // Reset para o novo episódio
@@ -223,6 +228,13 @@ export default function PlayerPage() {
   const [attemptUrls, setAttemptUrls] = useState<string[]>([]);
   const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
 
+  const handleVersionChange = (newVersion: 'sub' | 'dub') => {
+    setVersion(newVersion);
+    if (server.startsWith('ai_')) {
+      setServer('busca_ia');
+    }
+  };
+
   useEffect(() => {
     const resolvePlayer = async () => {
       if (!anime) return;
@@ -249,11 +261,13 @@ export default function PlayerPage() {
           setAttemptUrls(urls);
           setCurrentUrlIndex(0);
           setResolvedUrl(urls[0]);
+          setIsNativeType(true);
         } else if (server === 'betterflix') {
           const url = BetterFlixAPI.generateUrl(tmdbId || id, 'tv', 1, currentEp);
           setAttemptUrls([url]);
           setCurrentUrlIndex(0);
           setResolvedUrl(url);
+          setIsNativeType(false);
         } else if (server === 'anroll') {
           const results = await AnrollAPI.search(anime.title);
           const bestMatch = results[0];
@@ -265,14 +279,18 @@ export default function PlayerPage() {
                 setAttemptUrls([iframe]);
                 setCurrentUrlIndex(0);
                 setResolvedUrl(iframe);
+                setIsNativeType(false);
               } else {
                 setResolvedUrl(null);
+                setIsNativeType(false);
               }
             } else {
               setResolvedUrl(null);
+              setIsNativeType(false);
             }
           } else {
             setResolvedUrl(null);
+            setIsNativeType(false);
           }
         } else if (server === 'feral') {
           const urls: string[] = [];
@@ -290,6 +308,7 @@ export default function PlayerPage() {
           setAttemptUrls(urls);
           setCurrentUrlIndex(0);
           setResolvedUrl(urls[0]);
+          setIsNativeType(true);
         } else if (server === 'pixel') {
           const urls: string[] = [];
           const titlesToTry = [anime.title];
@@ -312,8 +331,49 @@ export default function PlayerPage() {
           setAttemptUrls(urls);
           setCurrentUrlIndex(0);
           setResolvedUrl(urls[0]);
+          setIsNativeType(true);
+        } else if (server === 'busca_ia') {
+          setIsAiSearching(true);
+          try {
+            const res = await fetch('/api/scraper/animeplay', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: anime.title, episode: currentEp, version })
+            });
+            const data = await res.json();
+            
+            if (data.players && data.players.length > 0) {
+              setAiPlayers(data.players);
+              // Set to the first AI player found
+              setResolvedUrl(data.players[0].src);
+              setIsNativeType(data.players[0].type === 'mp4' || data.players[0].type === 'm3u8');
+              // Change the server dropdown to match the selected AI player
+              setServer(`ai_0`); 
+            } else {
+              setResolvedUrl(null);
+              setIsNativeType(false);
+            }
+          } catch (error) {
+            console.error("AI Search Failed:", error);
+            setResolvedUrl(null);
+            setIsNativeType(false);
+          } finally {
+            setIsAiSearching(false);
+            setResolving(false); // Make sure to stop resolving spinner
+          }
+        } else if (server.startsWith('ai_')) {
+          // If user manually selects one of the AI found players from the dropdown
+          const index = parseInt(server.replace('ai_', ''));
+          if (aiPlayers[index]) {
+            setResolvedUrl(aiPlayers[index].src);
+            setIsNativeType(aiPlayers[index].type === 'mp4' || aiPlayers[index].type === 'm3u8');
+          } else {
+            setResolvedUrl(null);
+            setIsNativeType(false);
+          }
         } else {
           setResolvedUrl(null);
+          setIsNativeType(false);
         }
       } catch (err) {
         console.error("RESOLVE_PLAYER_ERROR:", err);
@@ -329,12 +389,11 @@ export default function PlayerPage() {
   // Fetch AniSkip times
   useEffect(() => {
     async function fetchSkipTimes() {
-      console.log('ANISKIP CHECK:', { malId: anime?.malId, currentEp });
       if (!anime?.malId || !currentEp) return;
       try {
         const res = await fetch(`https://api.aniskip.com/v2/skip-times/${anime.malId}/${currentEp}?types=op&types=ed&types=recap&episodeLength=0`);
+        if (!res.ok) { setSkipTimes({}); return; }
         const data = await res.json();
-        console.log('ANISKIP DATA:', data);
         if (data.found && data.results) {
           const times: any = {};
           data.results.forEach((r: any) => {
@@ -342,13 +401,12 @@ export default function PlayerPage() {
             if (r.skipType === 'ed') times.ed = { start: r.interval.startTime, end: r.interval.endTime };
             if (r.skipType === 'recap') times.recap = { start: r.interval.startTime, end: r.interval.endTime };
           });
-          console.log('ANISKIP TIMES PROCESSED:', times);
           setSkipTimes(times);
         } else {
           setSkipTimes({});
         }
-      } catch (err) {
-        console.error('ANISKIP_ERROR:', err);
+      } catch {
+        setSkipTimes({});
       }
     }
     fetchSkipTimes();
@@ -679,18 +737,21 @@ export default function PlayerPage() {
               onMouseLeave={() => isPlaying && setShowControls(false)}
               className={`relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 transition-all duration-700 shadow-2xl group ${cinemaMode ? 'scale-[1.02] ring-4 ring-blue-600/20' : ''}`}
             >
-              {resolving && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-md z-20 animate-in fade-in duration-300">
+              {(resolving || isAiSearching) && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md z-20 animate-in fade-in duration-300">
                   <div className="relative">
                     <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                     <div className="absolute inset-0 bg-blue-500/10 rounded-full animate-pulse" />
+                    {isAiSearching && <i className="fa-solid fa-robot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-500 text-xs animate-bounce" />}
                   </div>
-                  <p className="mt-4 text-[9px] font-black text-white uppercase tracking-[0.3em] opacity-50">Trocando Episódio...</p>
+                  <p className="mt-4 text-[9px] font-black text-white uppercase tracking-[0.3em] opacity-80 text-center px-4">
+                    {isAiSearching ? 'IA Vasculhando a Web por Players...' : 'Trocando Episódio...'}
+                  </p>
                 </div>
               )}
               
               {resolvedUrl ? (
-                (server === 'direct' || server === 'feral' || server === 'pixel') ? (
+                isNativeType ? (
                   <>
                     <video 
                       ref={videoRef}
@@ -867,7 +928,7 @@ export default function PlayerPage() {
                             </button>
 
                             {/* Volume */}
-                            <div className="hidden sm:flex items-center gap-2 ml-2">
+                            <div className="flex items-center gap-2 ml-1 sm:ml-2">
                               <button onClick={toggleMute} className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-all active:scale-90">
                                 <i className={`fa-solid ${isMuted ? 'fa-volume-xmark' : volume < 0.4 ? 'fa-volume-off' : volume < 0.7 ? 'fa-volume-low' : 'fa-volume-high'} text-sm`}></i>
                               </button>
@@ -875,12 +936,12 @@ export default function PlayerPage() {
                                 type="range" min="0" max="1" step="0.05"
                                 value={isMuted ? 0 : volume}
                                 onChange={handleVolumeChange}
-                                className="w-20 h-1 appearance-none bg-white/20 rounded-full cursor-pointer accent-cyan-400"
+                                className="hidden sm:block w-20 h-1 appearance-none bg-white/20 rounded-full cursor-pointer accent-cyan-400"
                               />
                             </div>
 
                             {/* Time */}
-                            <div className="text-[11px] font-mono text-white/60 ml-2 hidden sm:flex items-center gap-1">
+                            <div className="text-[9px] sm:text-[11px] font-mono text-white/60 ml-1 sm:ml-2 flex items-center gap-1">
                               <span className="text-white">{currentTime}</span>
                               <span className="opacity-30">/</span>
                               <span>{duration}</span>
@@ -914,7 +975,7 @@ export default function PlayerPage() {
                             <select
                               value={playbackSpeed}
                               onChange={(e) => handleSpeedChange(Number(e.target.value))}
-                              className="hidden sm:block h-8 px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 text-[10px] font-black cursor-pointer focus:outline-none transition-all"
+                              className="block h-8 px-1 sm:px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 text-[9px] sm:text-[10px] font-black cursor-pointer focus:outline-none transition-all"
                             >
                               {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => (
                                 <option key={s} value={s} className="bg-slate-900">{s}x</option>
@@ -1023,7 +1084,6 @@ export default function PlayerPage() {
 
                 {/* Inline Controls */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Server Select Dropdown Style */}
                   <div className="relative group">
                     <select 
                       value={server}
@@ -1031,11 +1091,17 @@ export default function PlayerPage() {
                       className="appearance-none bg-[#161f2e] border border-white/5 rounded-xl px-3 md:px-5 py-2.5 md:py-3 pr-8 md:pr-10 text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-widest focus:outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-[#1c2638] w-full min-w-0"
                     >
                       {[
-                        { id: 'direct', label: 'SERVIDOR 1 (DIRETO)' },
+                        { id: 'direct', label: 'SERVIDOR 1 (ANIMEPLAY)' },
                         { id: 'feral', label: 'SERVIDOR 2 (FERAL MP4)' },
                         { id: 'pixel', label: 'SERVIDOR 3 (SUSHI 4K)' },
                         { id: 'betterflix', label: 'SERVIDOR 4 (EXTERNO)' },
-                        { id: 'anroll', label: 'SERVIDOR 5 (ANROLL)' }
+                        { id: 'anroll', label: 'SERVIDOR 5 (ANROLL)' },
+                        { id: 'busca_ia', label: '🤖 SERVIDOR 6 (BUSCA IA)' },
+                        // Add dynamically found AI players
+                        ...aiPlayers.map((player, index) => ({
+                           id: `ai_${index}`,
+                           label: `IA - ${player.name.toUpperCase()}`
+                        }))
                       ].map(srv => (
                         <option key={srv.id} value={srv.id}>{srv.label}</option>
                       ))}
@@ -1046,13 +1112,13 @@ export default function PlayerPage() {
                   {/* LEG/DUB Toggle */}
                   <div className="flex bg-[#161f2e] p-1 rounded-xl border border-white/5">
                     <button
-                      onClick={() => setVersion('sub')}
+                      onClick={() => handleVersionChange('sub')}
                       className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${version === 'sub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       LEG
                     </button>
                     <button
-                      onClick={() => setVersion('dub')}
+                      onClick={() => handleVersionChange('dub')}
                       className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${version === 'dub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       DUB

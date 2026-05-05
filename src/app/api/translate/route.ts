@@ -13,6 +13,9 @@ export async function GET(request: Request) {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(cleanText)}`;
     
     const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error('Google Translate API returned an error');
+    }
     const data = await response.json();
     const translatedText = data[0].map((item: any) => item[0]).join('');
 

@@ -18,48 +18,52 @@ export default async function AnimeDetailsPage({
   return (
     <div className="flex flex-col min-h-screen bg-slate-950">
       {/* Hero Banner Section */}
-      <div className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden">
-        <Image
-          src={anime.banner || anime.poster}
-          alt={anime.title}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover opacity-40 blur-[2px] scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+      {/* Hero Banner Section */}
+      <div className="relative w-full min-h-[60vh] md:h-[65vh] flex items-end overflow-hidden">
+        {/* Background Image & Gradient */}
+        <div className="absolute inset-0">
+          <Image
+            src={anime.banner || anime.poster}
+            alt={anime.title}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover opacity-30 blur-[1px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+        </div>
         
         {/* Content Overlay */}
-        <div className="absolute inset-0 flex items-end">
-          <div className="container mx-auto px-4 lg:px-8 pb-12 flex flex-col md:flex-row gap-8 items-center md:items-end">
-            {/* Poster Card */}
-            <div className="relative w-48 h-72 md:w-64 md:h-96 flex-shrink-0 rounded-2xl overflow-hidden border-4 border-slate-950 -mb-20 md:mb-0 z-10 shadow-2xl">
-              <Image src={anime.poster} alt={anime.title} fill className="object-cover" priority sizes="(max-width: 768px) 192px, 256px" />
+        <div className="relative z-10 w-full container mx-auto px-4 lg:px-8 pt-24 pb-8 md:pb-12 flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end text-center md:text-left">
+          
+          {/* Poster Card (Hidden on very small screens, visible from sm up or just smaller) */}
+          <div className="relative w-32 h-48 md:w-64 md:h-96 flex-shrink-0 rounded-2xl overflow-hidden border-2 md:border-4 border-slate-950 shadow-2xl z-20">
+              <Image src={anime.poster} alt={anime.title} fill className="object-cover" priority sizes="(max-width: 768px) 128px, 256px" />
             </div>
 
             {/* Info Overlay */}
-            <div className="flex-grow text-center md:text-left z-10 pb-4">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-4">
-                <span className="px-3 py-1 bg-blue-600 text-[10px] font-black rounded-lg uppercase tracking-widest text-white">
+            <div className="flex-grow z-10">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 mb-4">
+                <span className="px-2.5 py-1 bg-blue-600 text-[9px] md:text-[10px] font-black rounded-lg uppercase tracking-widest text-white shadow-lg">
                   {anime.format}
                 </span>
-                <span className="px-3 py-1 bg-slate-800 text-[10px] font-black rounded-lg uppercase tracking-widest text-slate-300 border border-white/5">
+                <span className="px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-[9px] md:text-[10px] font-black rounded-lg uppercase tracking-widest text-slate-300 border border-white/10">
                   {anime.year}
                 </span>
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded-lg border border-yellow-500/20">
-                  <i className="fa-solid fa-star text-[10px]"></i>
-                  <span className="text-[11px] font-black">{anime.rating}</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 text-yellow-500 rounded-lg border border-yellow-500/20 backdrop-blur-md">
+                  <i className="fa-solid fa-star text-[9px]"></i>
+                  <span className="text-[10px] md:text-[11px] font-black">{anime.rating}</span>
                 </div>
               </div>
               
-              <h1 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4 leading-none">
+              <h1 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tighter mb-6 leading-tight">
                 {anime.title}
               </h1>
               
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3 w-full sm:w-auto">
                 <Link
                   href={`/player/${AniListAPI.slugify(anime.title)}/1`}
-                  className="flex items-center gap-3 px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-white font-black uppercase text-xs tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/20"
+                  className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-white font-black uppercase text-xs tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/20"
                 >
                   <i className="fa-solid fa-play"></i>
                   Assistir Agora
@@ -72,9 +76,8 @@ export default async function AnimeDetailsPage({
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 lg:px-8 py-20 md:py-12">
+      <div className="container mx-auto px-4 lg:px-8 py-16 md:py-12">
         <div className="grid lg:grid-cols-4 gap-12">
           
           {/* Sidebar (Agora na Esquerda) */}
