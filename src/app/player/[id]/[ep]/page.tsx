@@ -791,8 +791,7 @@ export default function PlayerPage() {
                     
                     {/* ═══ CINEMA HUD CONTROLS ═══ */}
                     <div 
-                      onClick={togglePlay}
-                      className={`absolute inset-0 flex flex-col justify-end transition-all duration-500 ${showControls ? 'opacity-100' : 'opacity-0 cursor-none'}`}
+                      className={`absolute inset-0 flex flex-col justify-end transition-all duration-500 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0 cursor-none'}`}
                     >
 
                       {/* Gradient Fade */}
@@ -868,7 +867,7 @@ export default function PlayerPage() {
                       {/* Controls Bar */}
                       <div 
                         onClick={(e) => e.stopPropagation()}
-                        className="relative z-10 px-6 pb-5 flex flex-col gap-3"
+                        className="relative z-10 px-6 pb-5 flex flex-col gap-3 pointer-events-auto"
                       >
 
                         {/* Progress Bar Row */}
