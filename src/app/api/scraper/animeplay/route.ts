@@ -177,6 +177,40 @@ function resolveEmbedToDirectUrl(url: string): { src: string, type: string } {
     return { src: url, type: 'iframe' };
 }
 
+/**
+ * Resolve o link direto de vídeos do Blogger (Google Video) 
+ * que geralmente possuem qualidade 1080p disponível.
+ */
+async function resolveBloggerUrl(url: string): Promise<{ src: string, type: string, quality?: string } | null> {
+    if (!url.includes('blogger.com')) return null;
+    
+    try {
+        const html = await fetchWithAntiBot(url);
+        if (!html) return null;
+
+        // Regex para capturar as URLs de vídeo no script do Blogger
+        const videoMatch = html.match(/"play_url":"([^"]+)"/);
+        if (videoMatch && videoMatch[1]) {
+            const videoUrl = videoMatch[1].replace(/\\u0026/g, '&');
+            return { src: videoUrl, type: 'mp4', quality: '1080p' };
+        }
+
+        // Fallback: Tenta buscar por stream_map ou links diretos de vídeo no HTML
+        const streamsMatch = html.match(/"streams":\[([^\]]+)\]/);
+        if (streamsMatch && streamsMatch[1]) {
+            const streams = JSON.parse(`[${streamsMatch[1]}]`);
+            // Prioriza a maior qualidade disponível (geralmente a última na lista do Blogger)
+            const bestStream = streams.sort((a: any, b: any) => (parseInt(b.format_id) || 0) - (parseInt(a.format_id) || 0))[0];
+            if (bestStream?.play_url) {
+                return { src: bestStream.play_url, type: 'mp4', quality: '1080p' };
+            }
+        }
+    } catch (e) {
+        logger.warn(`[Resolver] Falha ao resolver Blogger: ${url}`);
+    }
+    return null;
+}
+
 async function extractDooplayPlayers(html: string, baseUrl: string): Promise<{ name: string; src: string; type: string }[]> {
     const players: { name: string; src: string; type: string }[] = [];
     const $ = cheerio.load(html);
@@ -230,7 +264,12 @@ function extractStaticIframes(html: string): { name: string; src: string; type: 
         const src = $(el).attr('src');
         if (src && !blocklist.some((b) => src.includes(b))) {
             let name = `Player ${i + 1}`;
-            if (src.includes('blogger.com')) name = 'Blogger';
+            let quality = undefined;
+            
+            if (src.includes('blogger.com')) {
+                name = 'Blogger FHD';
+                quality = '1080p';
+            }
             else if (src.includes('strp2p.com')) name = 'STRp2p';
             else if (src.includes('animeshd.cloud')) name = 'AnimesHD';
             else if (src.includes('aniplay.online') || src.includes('jwplayer')) name = 'AnimePlay HD';
@@ -238,7 +277,7 @@ function extractStaticIframes(html: string): { name: string; src: string; type: 
             else if (src.includes('streamtape')) name = 'StreamTape';
 
             const resolved = resolveEmbedToDirectUrl(src);
-            players.push({ name, src: resolved.src, type: resolved.type });
+            players.push({ name, src: resolved.src, type: resolved.type, ...(quality && { quality }) });
         }
     });
 
@@ -350,20 +389,25 @@ export async function POST(req: Request) {
         let successfulSource: string | null = null;
         let epHtml: string | null = null;
 
-        for (const baseUrl of SOURCES) {
-            logger.debug(`[Scraper] Tentando fonte: ${baseUrl}`);
-            const resultHtml = await trySearchPath(title, episode, baseUrl, version);
-
-            if (resultHtml) {
-                if (resultHtml.includes('dooplay_player_option') || resultHtml.includes('<iframe')) {
-                    logger.info(`[Scraper] Sucesso na fonte: ${baseUrl}`);
-                    successfulSource = baseUrl;
-                    epHtml = resultHtml;
-                    break;
+        // --- BUSCA PARALELA OTIMIZADA (Waterfall Dinâmico) ---
+        // Dividimos em chunks para não sobrecarregar mas ganhar velocidade
+        const chunks = [SOURCES.slice(0, 3), SOURCES.slice(3)];
+        
+        for (const chunk of chunks) {
+            const results = await Promise.all(chunk.map(async (baseUrl) => {
+                const html = await trySearchPath(title, episode, baseUrl, version);
+                if (html && (html.includes('dooplay_player_option') || html.includes('<iframe'))) {
+                    return { baseUrl, html };
                 }
-            }
+                return null;
+            }));
 
-            await randomDelay(400, 800);
+            const found = results.find(r => r !== null);
+            if (found) {
+                successfulSource = found.baseUrl;
+                epHtml = found.html;
+                break;
+            }
         }
 
         if (!successfulSource || !epHtml) {
@@ -371,11 +415,22 @@ export async function POST(req: Request) {
             return NextResponse.json({ players: [] });
         }
 
-        let players = await extractDooplayPlayers(epHtml, successfulSource);
+        let players: any[] = await extractDooplayPlayers(epHtml, successfulSource);
 
         if (players.length === 0) {
             players = extractStaticIframes(epHtml);
         }
+
+        // Tenta converter Iframes do Blogger em Links Diretos FHD
+        const enhancedPlayers = await Promise.all(players.map(async (p) => {
+            if (p.type === 'iframe' && p.src.includes('blogger.com')) {
+                const resolved = await resolveBloggerUrl(p.src);
+                if (resolved) {
+                    return { ...p, src: resolved.src, type: resolved.type, quality: '1080p', name: `${p.name} (Nativo)` };
+                }
+            }
+            return p;
+        }));
 
         const $ep = cheerio.load(epHtml);
         let metaTitle = $ep('title').text().split('-')[0].trim();
@@ -384,11 +439,11 @@ export async function POST(req: Request) {
         }
 
         const resultData = {
-            players,
+            players: enhancedPlayers,
             meta: { title: metaTitle, source: successfulSource }
         };
 
-        if (players.length > 0) {
+        if (enhancedPlayers.length > 0) {
             cache.set(cacheKey, resultData);
         }
 

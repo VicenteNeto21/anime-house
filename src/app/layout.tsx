@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AuthHandler from "@/components/auth/AuthHandler";
 import { LibraryProvider } from "@/context/LibraryContext";
+import { Providers } from "@/components/Providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,16 +31,18 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
-        <LibraryProvider>
-          <Suspense fallback={null}>
-            <AuthHandler />
-          </Suspense>
-          <Navbar />
-          <main className="flex-grow pt-16">
-            {children}
-          </main>
-          <Footer />
-        </LibraryProvider>
+        <Providers>
+          <LibraryProvider>
+            <Suspense fallback={null}>
+              <AuthHandler />
+            </Suspense>
+            <Navbar />
+            <main className="flex-grow pt-16">
+              {children}
+            </main>
+            <Footer />
+          </LibraryProvider>
+        </Providers>
       </body>
     </html>
   );

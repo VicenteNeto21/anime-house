@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AniListAPI } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 const GENRE_MAP: { [key: string]: { label: string, color: string } } = {
   'Action': { label: 'Ação', color: 'bg-rose-500' },
@@ -28,6 +29,7 @@ const GENRE_MAP: { [key: string]: { label: string, color: string } } = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<any>(null);
   const [animeList, setAnimeList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +41,26 @@ export default function ProfilePage() {
 
   const fetchProfileData = async () => {
     const token = localStorage.getItem('anilist_token');
-    if (!token) {
+    
+    // Se não houver token do AniList E não houver sessão do Google ativa (e não estiver carregando)
+    if (!token && status === 'unauthenticated') {
       router.push('/login');
       return;
     }
+
+    if (!token && session?.user) {
+      // É um usuário Google sem AniList vinculado
+      setUser({
+        name: session.user.name,
+        avatar: { large: session.user.image || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' },
+        bannerImage: null,
+        statistics: { anime: { count: 0, episodesWatched: 0, meanScore: 0, minutesWatched: 0 } }
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!token) return;
 
     setLoading(true);
 
@@ -127,8 +145,10 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    fetchProfileData();
-  }, []);
+    if (status !== 'loading') {
+      fetchProfileData();
+    }
+  }, [status, session]);
 
   useEffect(() => {
     setCurrentPage(1);

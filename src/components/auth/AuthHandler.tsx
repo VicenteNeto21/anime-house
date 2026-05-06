@@ -11,7 +11,10 @@ export default function AuthHandler() {
     const code = searchParams.get('code');
     
     if (code) {
-      console.log('🔄 Trocando código por token...');
+      // Evita interferir com o callback do NextAuth
+      if (window.location.pathname.includes('/api/auth/callback')) return;
+
+      console.log('🔄 AuthHandler: Trocando código por token AniList...');
       
       // Chama nossa API interna para fazer a troca segura
       fetch('/api/auth/anilist', {

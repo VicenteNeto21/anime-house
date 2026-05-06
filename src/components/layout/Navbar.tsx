@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import SearchModal from '@/components/search/SearchModal';
 import { AniListAPI } from '@/lib/api';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -12,7 +13,21 @@ export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const { data: session, status } = useSession();
+
   useEffect(() => {
+    console.log('Session Status:', status);
+    console.log('Session Data:', session);
+
+    if (session?.user) {
+      setUser({
+        name: session.user.name,
+        avatar: { large: session.user.image || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' },
+        isGoogle: true
+      });
+      return;
+    }
+
     const token = localStorage.getItem('anilist_token');
     if (token) {
       AniListAPI.getCurrentUser(token)
@@ -26,13 +41,18 @@ export default function Navbar() {
         .catch(() => {
           localStorage.removeItem('anilist_token');
         });
+    } else {
+      setUser(null);
     }
-  }, []);
+  }, [session]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (session) {
+      await signOut({ redirect: false });
+    }
     localStorage.removeItem('anilist_token');
     localStorage.removeItem('anilist_token_expiry');
-    window.location.reload();
+    window.location.href = '/';
   };
 
   const getCurrentSeason = () => {

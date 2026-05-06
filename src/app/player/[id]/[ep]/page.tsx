@@ -62,7 +62,7 @@ export default function PlayerPage() {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiPlayers, setAiPlayers] = useState<{name: string, src: string, type?: string}[]>([]);
+  const [aiPlayers, setAiPlayers] = useState<{name: string, src: string, type?: string, quality?: string}[]>([]);
   const [userAniListInfo, setUserAniListInfo] = useState<any>(null);
   const [hasSynced, setHasSynced] = useState(false);
   const [showSyncToast, setShowSyncToast] = useState(false);
@@ -1096,19 +1096,22 @@ export default function PlayerPage() {
                       className="appearance-none bg-[#161f2e] border border-white/5 rounded-xl px-3 md:px-5 py-2.5 md:py-3 pr-8 md:pr-10 text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-widest focus:outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-[#1c2638] w-full min-w-0"
                     >
                       {[
-                        { id: 'direct', label: 'SERVIDOR 1 (ANIMEPLAY)' },
-                        { id: 'feral', label: 'SERVIDOR 2 (FERAL MP4)' },
-                        { id: 'pixel', label: 'SERVIDOR 3 (SUSHI 4K)' },
-                        { id: 'betterflix', label: 'SERVIDOR 4 (EXTERNO)' },
-                        { id: 'anroll', label: 'SERVIDOR 5 (ANROLL)' },
-                        { id: 'busca_ia', label: '🤖 SERVIDOR 6 (BUSCA IA)' },
+                        { id: 'direct', label: 'SERVIDOR 1 (ANIMEPLAY)', badge: 'HD' },
+                        { id: 'feral', label: 'SERVIDOR 2 (FERAL MP4)', badge: 'HD' },
+                        { id: 'pixel', label: 'SERVIDOR 3 (SUSHI 4K)', badge: '4K' },
+                        { id: 'betterflix', label: 'SERVIDOR 4 (EXTERNO)', badge: 'SD/HD' },
+                        { id: 'anroll', label: 'SERVIDOR 5 (ANROLL)', badge: 'HD' },
+                        { id: 'busca_ia', label: '🤖 BUSCA INTELIGENTE', badge: 'AI' },
                         // Add dynamically found AI players
                         ...aiPlayers.map((player, index) => ({
                            id: `ai_${index}`,
-                           label: `IA - ${player.name.toUpperCase()}`
+                           label: `IA - ${player.name.toUpperCase()}`,
+                           badge: player.quality || 'HD'
                         }))
                       ].map(srv => (
-                        <option key={srv.id} value={srv.id}>{srv.label}</option>
+                        <option key={srv.id} value={srv.id}>
+                          {srv.label} {srv.badge ? `[${srv.badge}]` : ''}
+                        </option>
                       ))}
                     </select>
                     <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-[8px] text-slate-500 pointer-events-none"></i>
