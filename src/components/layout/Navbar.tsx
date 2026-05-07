@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import SearchModal from '@/components/search/SearchModal';
 import { AniListAPI } from '@/lib/api';
 import { useSession, signOut } from 'next-auth/react';
@@ -12,6 +13,8 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   const { data: session, status } = useSession();
 
@@ -22,24 +25,35 @@ export default function Navbar() {
     if (session?.user) {
       setUser({
         name: session.user.name,
-        avatar: { large: session.user.image || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' },
+        avatar: { large: session.user.image || 'https://placehold.co/100x100/0a0f1c/ffffff?text=User' },
         isGoogle: true
       });
       return;
     }
 
     const token = localStorage.getItem('anilist_token');
+    const cachedUser = localStorage.getItem('anilist_user');
+
+    if (cachedUser) {
+      try {
+        setUser(JSON.parse(cachedUser));
+      } catch (e) { }
+    }
+
     if (token) {
       AniListAPI.getCurrentUser(token)
         .then(data => {
           if (data?.Viewer) {
             setUser(data.Viewer);
+            localStorage.setItem('anilist_user', JSON.stringify(data.Viewer));
           } else {
             localStorage.removeItem('anilist_token');
+            localStorage.removeItem('anilist_user');
           }
         })
         .catch(() => {
           localStorage.removeItem('anilist_token');
+          localStorage.removeItem('anilist_user');
         });
     } else {
       setUser(null);
@@ -52,7 +66,9 @@ export default function Navbar() {
     }
     localStorage.removeItem('anilist_token');
     localStorage.removeItem('anilist_token_expiry');
-    window.location.href = '/';
+    localStorage.removeItem('anilist_user');
+    router.push('/');
+    router.refresh();
   };
 
   const getCurrentSeason = () => {
@@ -66,6 +82,15 @@ export default function Navbar() {
   const currentYear = new Date().getFullYear();
   const currentSeason = getCurrentSeason();
 
+  const desktopLinks = [
+    { href: '/', label: 'Início' },
+    { href: '/lista', label: 'Lista de Animes' },
+    { href: '/generos', label: 'Gêneros' },
+    { href: '/calendario', label: 'Calendário' },
+    { href: '/lista?sort=POPULARITY_DESC', label: 'Top 100' },
+    { href: `/lista?year=${currentYear}&season=${currentSeason}`, label: 'Temporada' },
+  ];
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#0a0f1c]/90 backdrop-blur-md border-b border-white/5">
@@ -77,36 +102,37 @@ export default function Navbar() {
             </Link>
 
             <div className="hidden lg:flex items-center gap-6 text-[11px] font-black uppercase tracking-widest text-slate-400">
-              <Link href="/" className="hover:text-white transition-colors">Início</Link>
-              <Link href="/lista" className="hover:text-white transition-colors">Lista de Animes</Link>
-              <Link href="/generos" className="hover:text-white transition-colors">Gêneros</Link>
-              <Link href="/calendario" className="hover:text-white transition-colors">Calendário</Link>
-              <Link href="/lista?sort=POPULARITY_DESC" className="hover:text-white transition-colors">Top 100</Link>
-              <Link href={`/lista?year=${currentYear}&season=${currentSeason}`} className="hover:text-white transition-colors">Temporada</Link>
+              {desktopLinks.map((link) => (
+                <Link key={link.href} href={link.href} className={`transition-colors ${pathname === link.href ? 'text-[#3b82f6]' : 'hover:text-white'}`}>
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
 
           <div className="flex items-center gap-4 md:gap-5">
             <div className="flex items-center gap-3 md:gap-4 text-white/80 md:border-r border-white/5 md:pr-5">
-              <button 
+              <button
                 onClick={() => setIsSearchOpen(true)}
                 className="hover:text-[#3b82f6] transition-all hover:scale-110 cursor-pointer p-1"
               >
                 <i className="fa-solid fa-search text-sm"></i>
               </button>
             </div>
-            
+
             {user ? (
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-3 p-1 pr-3 rounded-full bg-white/5 hover:bg-white/10 transition-all cursor-pointer border border-white/5 relative z-[110]"
                 >
                   <div className="relative w-8 h-8 rounded-full overflow-hidden border border-blue-500/50">
-                    <img 
-                      src={user.avatar.large} 
-                      alt={user.name} 
-                      className="w-full h-full object-cover"
+                    <Image
+                      src={user.avatar.large}
+                      alt={user.name}
+                      fill
+                      sizes="32px"
+                      className="object-cover"
                     />
                   </div>
                   <span className="text-[10px] font-black uppercase text-white tracking-widest hidden md:block">
@@ -118,26 +144,26 @@ export default function Navbar() {
                 {isUserMenuOpen && (
                   <>
                     {/* Overlay agora atrás do menu mas na frente do resto */}
-                    <div 
-                      className="fixed inset-0 z-[105] bg-transparent" 
+                    <div
+                      className="fixed inset-0 z-[105] bg-transparent"
                       onClick={() => setIsUserMenuOpen(false)}
                     />
-                    
+
                     <div className="absolute right-0 mt-3 w-48 bg-slate-900 border border-white/5 rounded-2xl overflow-hidden shadow-2xl py-2 z-[110]">
                       <div className="px-4 py-3 border-b border-white/5 mb-2">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Conectado como</p>
                         <p className="text-xs font-bold text-white truncate">{user.name}</p>
                       </div>
-                      <Link 
-                        href="/perfil" 
+                      <Link
+                        href="/perfil"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                       >
                         <i className="fa-solid fa-user text-xs w-4"></i>
                         Meu Perfil
                       </Link>
-                      <Link 
-                        href="/configuracoes" 
+                      <Link
+                        href="/configuracoes"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                       >
@@ -145,7 +171,7 @@ export default function Navbar() {
                         Configurações
                       </Link>
                       <div className="h-px bg-white/5 my-2"></div>
-                      <button 
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-bold text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
                       >
@@ -163,7 +189,7 @@ export default function Navbar() {
             )}
 
             {/* Mobile Hamburger */}
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/5 text-white/70 hover:text-white transition-all cursor-pointer"
             >
@@ -189,7 +215,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-4 text-lg font-black text-slate-300 hover:text-blue-400 uppercase tracking-widest transition-colors"
+                className={`flex items-center gap-4 text-lg font-black uppercase tracking-widest transition-colors ${pathname === link.href ? 'text-[#3b82f6]' : 'text-slate-300 hover:text-blue-400'}`}
               >
                 <i className={`fa-solid ${link.icon} text-blue-500 w-6 text-center`}></i>
                 {link.label}
@@ -199,9 +225,9 @@ export default function Navbar() {
         </div>
       )}
 
-      <SearchModal 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </>
   );
