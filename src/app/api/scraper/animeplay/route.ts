@@ -44,7 +44,7 @@ const randomDelay = (min: number, max: number) => delay(Math.floor(Math.random()
 let browserInstance: any = null;
 
 async function getBrowser() {
-    if (browserInstance) return browserInstance;
+    if (browserInstance && browserInstance.isConnected()) return browserInstance;
 
     const puppeteer = (await import('puppeteer-extra')).default;
     const StealthPlugin = (await import('puppeteer-extra-plugin-stealth')).default;
@@ -83,8 +83,9 @@ async function bypassCloudflare(url: string): Promise<string | null> {
     const browser = await getBrowser();
     if (!browser) return null;
 
+    let page: any = null;
     try {
-        const page = await browser.newPage();
+        page = await browser.newPage();
         await page.setUserAgent(UA);
 
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
@@ -106,6 +107,10 @@ async function bypassCloudflare(url: string): Promise<string | null> {
     } catch (error) {
         logger.error(`[Bypass] Falha ao by-passar ${url}: ` + error);
         return null;
+    } finally {
+        if (page) {
+            await page.close().catch(() => { });
+        }
     }
 }
 
@@ -183,7 +188,7 @@ function resolveEmbedToDirectUrl(url: string): { src: string, type: string } {
  */
 async function resolveBloggerUrl(url: string): Promise<{ src: string, type: string, quality?: string } | null> {
     if (!url.includes('blogger.com')) return null;
-    
+
     try {
         const html = await fetchWithAntiBot(url);
         if (!html) return null;
@@ -265,7 +270,7 @@ function extractStaticIframes(html: string): { name: string; src: string; type: 
         if (src && !blocklist.some((b) => src.includes(b))) {
             let name = `Player ${i + 1}`;
             let quality = undefined;
-            
+
             if (src.includes('blogger.com')) {
                 name = 'Blogger FHD';
                 quality = '1080p';
@@ -298,15 +303,16 @@ async function trySearchPath(title: string, episode: number, baseUrl: string, ve
             if (animePageUrl) return;
             const href = $(el).attr('href');
             if (href && href.includes('/anime/') && !href.includes('#')) {
+                const absoluteHref = href.startsWith('http') ? href : `${baseUrl}${href}`;
                 const urlSlug = href.split('/anime/')[1]?.replace(/\/$/, '');
                 if (urlSlug && (urlSlug === titleSlug || urlSlug.includes(titleSlug) || titleSlug.includes(urlSlug))) {
                     const isDubHref = href.includes('dublado');
                     if (version === 'dub' && isDubHref) {
-                        animePageUrl = href;
+                        animePageUrl = absoluteHref;
                     } else if (version === 'sub' && !isDubHref) {
-                        animePageUrl = href;
+                        animePageUrl = absoluteHref;
                     } else if (!version) {
-                        animePageUrl = href;
+                        animePageUrl = absoluteHref;
                     }
                 }
             }
@@ -317,7 +323,8 @@ async function trySearchPath(title: string, episode: number, baseUrl: string, ve
                 if (animePageUrl) return;
                 const href = $(el).attr('href');
                 if (href && href.includes('/anime/') && !href.includes('#') && !href.includes('one-piece') && !href.includes('dragon-ball')) {
-                    animePageUrl = href;
+                    const absoluteHref = href.startsWith('http') ? href : `${baseUrl}${href}`;
+                    animePageUrl = absoluteHref;
                 }
             });
         }
@@ -347,8 +354,9 @@ async function trySearchPath(title: string, episode: number, baseUrl: string, ve
                 href.endsWith(`episodio-${paddedEp}`) ||
                 href.endsWith(`episodio-${episode}`)
             )) {
-                if (!epUrls.includes(href)) {
-                    epUrls.unshift(href);
+                const absoluteHref = href.startsWith('http') ? href : `${baseUrl}${href}`;
+                if (!epUrls.includes(absoluteHref)) {
+                    epUrls.unshift(absoluteHref);
                 }
             }
         });
@@ -392,7 +400,7 @@ export async function POST(req: Request) {
         // --- BUSCA PARALELA OTIMIZADA (Waterfall Dinâmico) ---
         // Dividimos em chunks para não sobrecarregar mas ganhar velocidade
         const chunks = [SOURCES.slice(0, 3), SOURCES.slice(3)];
-        
+
         for (const chunk of chunks) {
             const results = await Promise.all(chunk.map(async (baseUrl) => {
                 const html = await trySearchPath(title, episode, baseUrl, version);
