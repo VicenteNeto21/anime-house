@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
@@ -8,6 +9,20 @@ export default function LoginPage() {
   const clientId = process.env.NEXT_PUBLIC_ANILIST_CLIENT_ID || '10978';
   const redirectUri = process.env.NEXT_PUBLIC_ANILIST_REDIRECT_URL || 'http://localhost:3000';
   const anilistAuthUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+  
+  useEffect(() => {
+    console.log('--- OAuth Debug Info ---');
+    console.log('AniList Client ID:', clientId);
+    console.log('AniList Redirect URI:', redirectUri);
+    console.log('AniList Auth URL:', anilistAuthUrl);
+    console.log('NextAuth URL:', process.env.NEXTAUTH_URL);
+    console.log('Current Origin:', window.location.origin);
+    console.log('------------------------');
+
+    if (redirectUri !== window.location.origin && !window.location.origin.includes('localhost')) {
+      console.warn('⚠️ Alerta: O Redirect URI no .env não coincide com a URL atual!');
+    }
+  }, [clientId, redirectUri, anilistAuthUrl]);
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#05080f]">

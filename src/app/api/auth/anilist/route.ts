@@ -21,13 +21,27 @@ export async function POST(request: Request) {
 
     const data = await response.json();
 
-    if (data.error) {
-      console.error('AniList Token Error:', data);
-      return NextResponse.json({ error: data.message }, { status: 400 });
+    if (!response.ok || data.error) {
+      console.error('❌ AniList OAuth Error:', {
+        status: response.status,
+        error: data.error,
+        description: data.error_description || data.message,
+        receivedCode: code?.substring(0, 5) + '...',
+        redirectUriSent: process.env.NEXT_PUBLIC_ANILIST_REDIRECT_URL
+      });
+      
+      return NextResponse.json({ 
+        error: data.error_description || data.message || 'Falha na troca do token com AniList',
+        details: data
+      }, { status: response.status || 400 });
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Erro interno ao processar login' }, { status: 500 });
+  } catch (error: any) {
+    console.error('❌ Internal Auth Error:', error);
+    return NextResponse.json({ 
+      error: 'Erro interno ao processar login',
+      message: error.message 
+    }, { status: 500 });
   }
 }

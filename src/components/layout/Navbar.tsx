@@ -126,17 +126,21 @@ export default function Navbar() {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-3 p-1 pr-3 rounded-full bg-white/5 hover:bg-white/10 transition-all cursor-pointer border border-white/5 relative z-[110]"
                 >
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-blue-500/50">
-                    <Image
-                      src={user.avatar.large}
-                      alt={user.name}
-                      fill
-                      sizes="32px"
-                      className="object-cover"
-                    />
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-blue-500/50 bg-slate-800 flex items-center justify-center">
+                    {user?.avatar?.large ? (
+                      <Image
+                        src={user.avatar.large}
+                        alt={user?.name || 'User'}
+                        fill
+                        sizes="32px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <i className="fa-solid fa-user text-xs text-slate-400"></i>
+                    )}
                   </div>
                   <span className="text-[10px] font-black uppercase text-white tracking-widest hidden md:block">
-                    {user.name}
+                    {user?.name || 'User'}
                   </span>
                   <i className={`fa-solid fa-chevron-down text-[8px] text-slate-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}></i>
                 </button>

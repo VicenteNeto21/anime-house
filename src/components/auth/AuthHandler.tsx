@@ -37,13 +37,19 @@ export default function AuthHandler() {
           
           // Limpa a URL e recarrega
           router.push('/');
-          window.location.href = '/'; // Forçar recarregamento para atualizar Navbar
+          setTimeout(() => {
+            window.location.href = '/'; // Forçar recarregamento para atualizar Navbar
+          }, 100);
         } else {
-          console.error('❌ Falha no login:', data.error);
+          console.error('❌ Falha no login AniList:', data.error);
+          alert(`Erro no login AniList: ${data.error || 'Verifique o console para mais detalhes'}`);
+          router.push('/login');
         }
       })
       .catch(err => {
         console.error('❌ Erro na autenticação:', err);
+        alert('Erro crítico ao conectar com AniList. Verifique sua conexão.');
+        router.push('/login');
       });
     }
   }, [searchParams, router]);

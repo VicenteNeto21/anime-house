@@ -117,7 +117,7 @@ export const AniListAPI = {
       'TV': 'Anime', 'TV_SHORT': 'Anime Curto', 'MOVIE': 'Filme', 'OVA': 'OVA', 'ONA': 'ONA', 'SPECIAL': 'Especial', 'MUSIC': 'Clipe'
     } as Record<string, string>
   },
-  
+
   slugify(text: string): string {
     return text
       .toString()
@@ -135,7 +135,7 @@ export const AniListAPI = {
     const cacheKey = JSON.stringify({ query, variables, token: token ? 'auth' : 'public' });
     const cached = this.cache.get(cacheKey);
     const ttl = isMutation ? this.CACHE_TTL_MUTATION : this.CACHE_TTL;
-    
+
     // Retorna cache válido (mutações sempre passam direto)
     if (!isMutation && !forceRefresh && cached && (Date.now() - cached.timestamp < ttl)) {
       return cached.data;
@@ -164,7 +164,8 @@ export const AniListAPI = {
           method: 'POST',
           headers,
           body: JSON.stringify({ query, variables }),
-          cache: forceRefresh ? 'no-store' : 'default',
+          // No Next.js 15, 'force-cache' reduz muito os erros 429 no servidor
+          cache: forceRefresh ? 'no-store' : 'force-cache',
         };
 
         // Só adiciona a propriedade 'next' se estiver no servidor (Next.js server-side)
@@ -223,7 +224,7 @@ export const AniListAPI = {
           console.error('ANILIST_QUERY_ERROR:', result.errors[0].message);
           throw new Error(result.errors[0].message);
         }
-        
+
         this.cache.set(cacheKey, { data: result.data, timestamp: Date.now() });
         return result.data;
       } catch (error: any) {
@@ -269,8 +270,8 @@ export const AniListAPI = {
       .filter(Boolean);
 
     const nextAiring = media.nextAiringEpisode;
-    const episodesReleased = media.status === 'RELEASING' 
-      ? (nextAiring ? nextAiring.episode - 1 : media.episodes) 
+    const episodesReleased = media.status === 'RELEASING'
+      ? (nextAiring ? nextAiring.episode - 1 : media.episodes)
       : (media.episodes || 0);
 
     return {
@@ -418,7 +419,7 @@ export const AniListAPI = {
     const variables = isIdNumeric ? { id: Number(id) } : { search: String(id).replace(/-/g, ' ') };
     const data = await this.query(gql, variables);
     const anime = this.mapAniListToInternal(data?.Media);
-    
+
     if (anime) {
       if (anime.description) {
         anime.description = await this.translateText(anime.description);
@@ -470,7 +471,7 @@ export const AniListAPI = {
     const variables: any = { page, perPage };
     if (genre) variables.genre = genre;
     if (year) variables.year = year;
-    
+
     // Validar se o season é um MediaSeason válido para evitar erros de query
     const validSeasons = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
     if (season && validSeasons.includes(season.toUpperCase())) {
@@ -530,7 +531,7 @@ export const AniListAPI = {
   async getAiringSchedule(): Promise<any[]> {
     const start = Math.floor(Date.now() / 1000) - (3600 * 24 * 3.5); // 3.5 dias atrás
     const end = Math.floor(Date.now() / 1000) + (3600 * 24 * 3.5); // 3.5 dias à frente
-    
+
     const gql = `
     query ($start: Int, $end: Int, $page: Int) {
       Page (page: $page, perPage: 50) {
@@ -542,9 +543,9 @@ export const AniListAPI = {
         }
       }
     }`;
-    
+
     let allSchedules: any[] = [];
-    
+
     // Buscar 3 páginas para cobrir a semana toda (~150 animes)
     for (let p = 1; p <= 3; p++) {
       const data = await this.query(gql, { start, end, page: p });
@@ -552,7 +553,7 @@ export const AniListAPI = {
       allSchedules = [...allSchedules, ...pageSchedules];
       if (pageSchedules.length < 50) break;
     }
-    
+
     return allSchedules
       .filter((item: any) => item.media)
       .map((item: any) => ({
@@ -568,11 +569,11 @@ export const AniListAPI = {
       }));
   },
 
-  userIdCache: new Map<string, number>(),
+  userIdCache: new Map<string, any>(),
 
   async getCurrentUser(token: string) {
     if (this.userIdCache.has(token)) {
-      return { Viewer: { id: this.userIdCache.get(token) } };
+      return { Viewer: this.userIdCache.get(token) };
     }
 
     const gql = `
@@ -589,7 +590,7 @@ export const AniListAPI = {
     `;
     const res = await this.query(gql, {}, token);
     if (res?.Viewer?.id) {
-      this.userIdCache.set(token, res.Viewer.id);
+      this.userIdCache.set(token, res.Viewer);
     }
     return res;
   },
@@ -598,7 +599,7 @@ export const AniListAPI = {
     try {
       const userRes = await this.getCurrentUser(token);
       const userId = userRes?.Viewer?.id;
-      
+
       if (!userId) return null;
 
       const gql = `
@@ -668,7 +669,7 @@ export const AniListAPI = {
     // Primeiro pegamos o ID do usuário
     const userRes = await this.getCurrentUser(token);
     const userId = userRes?.Viewer?.id;
-    
+
     if (!userId) return [];
 
     const gql = `
@@ -697,10 +698,10 @@ export const AniListAPI = {
       }
     `;
     const data = await this.query(gql, { userId, page, perPage }, token);
-    
+
     // Flatten all entries from all lists (AniList returns one list per status)
     const allEntries = data?.MediaListCollection?.lists?.flatMap((list: any) => list.entries) || [];
-    
+
     return allEntries.map((entry: any) => ({
       id: entry.media.id,
       title: entry.media.title.english || entry.media.title.romaji || entry.media.title.native,
@@ -745,7 +746,7 @@ export const MeusAnimesAPI = {
       const html = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
-      
+
       const items = doc.querySelectorAll('div.result-item');
       return Array.from(items).map(item => {
         const link = item.querySelector('.details .title a') as HTMLAnchorElement;
@@ -764,11 +765,11 @@ export const MeusAnimesAPI = {
   async getEpisodeIframe(animeUrl: string, episode: number, isDubbed: boolean) {
     let slug = animeUrl.split('/').filter(Boolean).pop() || '';
     slug = slug.replace(/^anime-/, '');
-    
+
     const season = 1;
     const versionSuffix = isDubbed ? '-dublado' : '';
     const epUrl = `${this.baseUrl}/e/${slug}${versionSuffix}-${season}-episodio-${episode}/`;
-    
+
     const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(epUrl)}`;
 
     try {
@@ -776,7 +777,7 @@ export const MeusAnimesAPI = {
       const html = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
-      
+
       const iframe = doc.querySelector('iframe[src*="meusdoramas"]') as HTMLIFrameElement;
       return iframe ? iframe.src : null;
     } catch (e) {
@@ -796,4 +797,3 @@ export const BetterFlixAPI = {
     return `${this.baseUrl}?id=${id}&type=tv&season=${season}&episode=${episode}`;
   }
 };
-
