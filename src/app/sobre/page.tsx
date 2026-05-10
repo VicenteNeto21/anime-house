@@ -66,8 +66,46 @@ export default function SobrePage() {
               </h3>
               <p className="text-base text-slate-400">
                 Dúvidas, sugestões ou solicitações de parceria? Entre em contato conosco através do e-mail oficial: <br/>
-                <span className="text-white font-bold block mt-2">contato@animehouse.online</span>
+                <span className="text-white font-bold block mt-2 text-lg">vneto750@gmail.com</span>
               </p>
+            </div>
+          </section>
+
+          <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
+            <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+              <i className="fa-solid fa-tv text-blue-500"></i>
+              Onde Assistir Oficialmente?
+            </h2>
+            <p className="text-slate-400 mb-8 leading-relaxed">
+              O Anime House incentiva o apoio direto à indústria da animação. Abaixo, listamos as principais plataformas oficiais onde você pode assistir animes legalmente no Brasil:
+            </p>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+              {[
+                { name: 'Crunchyroll', url: 'https://crunchyroll.com', color: '#f47521', icon: 'https://www.google.com/s2/favicons?domain=crunchyroll.com&sz=128' },
+                { name: 'Netflix', url: 'https://netflix.com', color: '#e50914', icon: 'https://www.google.com/s2/favicons?domain=netflix.com&sz=128' },
+                { name: 'Disney+', url: 'https://disneyplus.com', color: '#0063e5', icon: 'https://www.google.com/s2/favicons?domain=disneyplus.com&sz=128' },
+                { name: 'Prime Video', url: 'https://primevideo.com', color: '#00a8e1', icon: 'https://www.google.com/s2/favicons?domain=primevideo.com&sz=128' },
+              ].map((platform) => (
+                <a 
+                  key={platform.name}
+                  href={platform.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center p-6 bg-slate-950/50 border border-white/5 rounded-2xl hover:border-blue-500/30 transition-all group hover:-translate-y-1"
+                >
+                  <div className="w-16 h-16 mb-4 rounded-xl overflow-hidden shadow-lg border border-white/10 group-hover:border-white/20 transition-all flex items-center justify-center bg-slate-900">
+                    <img 
+                      src={platform.icon} 
+                      alt={platform.name} 
+                      className="w-10 h-10 object-contain group-hover:scale-110 transition-transform" 
+                    />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-white transition-colors">
+                    {platform.name}
+                  </span>
+                </a>
+              ))}
             </div>
           </section>
 
