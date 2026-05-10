@@ -30,8 +30,52 @@ const SOURCES = [
     'https://animesbr.cc'
 ];
 
+type ScrapedPlayer = {
+    name: string;
+    src: string;
+    type: string;
+    quality?: string;
+};
+
+type SpecialScrapeResult = {
+    source: string;
+    players: ScrapedPlayer[];
+};
+
+type AnimesBrSuggestion = {
+    type?: string;
+    slug?: string;
+};
+
+type ScrapeResponse = {
+    players: ScrapedPlayer[];
+    meta?: {
+        title: string;
+        source: string;
+    };
+};
+
+type BloggerStream = {
+    format_id?: string | number;
+    play_url?: string;
+};
+
+type BrowserLike = {
+    isConnected: () => boolean;
+    newPage: () => Promise<PageLike>;
+};
+
+type PageLike = {
+    setUserAgent: (ua: string) => Promise<void>;
+    goto: (url: string, options: { waitUntil: string; timeout: number }) => Promise<unknown>;
+    title: () => Promise<string>;
+    waitForNavigation: (options: { waitUntil: string; timeout: number }) => Promise<unknown>;
+    content: () => Promise<string>;
+    close: () => Promise<void>;
+};
+
 // LRU Cache (max 100 itens, 30 min TTL)
-const cache = new LRUCache<string, any>({
+const cache = new LRUCache<string, ScrapeResponse>({
     max: 100,
     ttl: 30 * 60 * 1000,
 });
@@ -41,7 +85,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const randomDelay = (min: number, max: number) => delay(Math.floor(Math.random() * (max - min + 1) + min));
 
 // === ANTI-BOT BYPASS (PUPPETEER STEALTH) ===
-let browserInstance: any = null;
+let browserInstance: BrowserLike | null = null;
 
 async function getBrowser() {
     if (browserInstance && browserInstance.isConnected()) return browserInstance;
@@ -83,7 +127,7 @@ async function bypassCloudflare(url: string): Promise<string | null> {
     const browser = await getBrowser();
     if (!browser) return null;
 
-    let page: any = null;
+    let page: PageLike | null = null;
     try {
         page = await browser.newPage();
         await page.setUserAgent(UA);
@@ -114,7 +158,9 @@ async function bypassCloudflare(url: string): Promise<string | null> {
     }
 }
 
-async function fetchWithAntiBot(url: string, isJson: boolean = false): Promise<any> {
+async function fetchWithAntiBot(url: string): Promise<string | null>;
+async function fetchWithAntiBot(url: string, isJson: true): Promise<unknown | null>;
+async function fetchWithAntiBot(url: string, isJson: boolean = false): Promise<string | unknown | null> {
     // Tentativa 1: Fetch normal
     try {
         const res = await fetch(url, {
@@ -127,7 +173,7 @@ async function fetchWithAntiBot(url: string, isJson: boolean = false): Promise<a
         });
 
         if (res.status === 200) {
-            return isJson ? await res.json() : await res.text();
+            return isJson ? await res.json() as unknown : await res.text();
         }
 
         if (res.status === 403 || res.status === 429 || res.status === 503) {
@@ -135,7 +181,7 @@ async function fetchWithAntiBot(url: string, isJson: boolean = false): Promise<a
         } else {
             return null;
         }
-    } catch (e) {
+    } catch {
         logger.warn(`[FastPath] Timeout ou falha na URL: ${url}`);
     }
 
@@ -162,17 +208,79 @@ function padEpisode(ep: number): string {
     return ep < 10 ? `0${ep}` : `${ep}`;
 }
 
+function decodeHtmlEntities(value: string): string {
+    return value
+        .replace(/&quot;/g, '"')
+        .replace(/&#034;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+}
+
+function normalizeUrl(url: string, baseUrl?: string): string | null {
+    if (!url) return null;
+    const decoded = decodeHtmlEntities(url.trim()).replace(/\\\//g, '/');
+    try {
+        return baseUrl ? new URL(decoded, baseUrl).toString() : new URL(decoded).toString();
+    } catch {
+        return null;
+    }
+}
+
+function inferPlayerType(url: string): string {
+    const lower = url.toLowerCase();
+    if (lower.includes('.m3u8')) return 'm3u8';
+    if (lower.includes('.mp4')) return 'mp4';
+    return 'iframe';
+}
+
+function getDirectMediaFromUrlParam(url: string): string | null {
+    try {
+        const parsed = new URL(url);
+        const preferredParams = ['source', 'url', 'file', 'video', 'src', 'd'];
+
+        for (const key of preferredParams) {
+            const value = parsed.searchParams.get(key);
+            const normalized = normalizeUrl(value || '');
+            if (normalized && inferPlayerType(normalized) !== 'iframe') return normalized;
+        }
+
+        for (const value of parsed.searchParams.values()) {
+            const normalized = normalizeUrl(value);
+            if (normalized && inferPlayerType(normalized) !== 'iframe') return normalized;
+        }
+    } catch { }
+
+    return null;
+}
+
+function uniquePlayers<T extends { src?: string }>(players: T[]): T[] {
+    const seen = new Set<string>();
+    return players.filter((player) => {
+        if (!player?.src || seen.has(player.src)) return false;
+        seen.add(player.src);
+        return true;
+    });
+}
+
 // === RESOLVERS E EXTRATORES ===
 
 function resolveEmbedToDirectUrl(url: string): { src: string, type: string } {
-    // JWPlayer
-    if (url.includes('jwplayer?source=')) {
-        try {
-            const parsed = new URL(url);
-            const source = parsed.searchParams.get('source');
-            if (source && (source.endsWith('.mp4') || source.includes('.mp4'))) return { src: source, type: 'mp4' };
-            if (source && (source.endsWith('.m3u8') || source.includes('.m3u8'))) return { src: source, type: 'm3u8' };
-        } catch { }
+    const directType = inferPlayerType(url);
+    if (directType !== 'iframe') {
+        return { src: url, type: directType };
+    }
+
+    const anivideoMatch = url.match(/[?&]d=([^&]+)/);
+    if (url.includes('api.anivideo.net') && anivideoMatch?.[1]) {
+        const src = decodeURIComponent(anivideoMatch[1]);
+        return { src, type: inferPlayerType(src) };
+    }
+
+    const directParam = getDirectMediaFromUrlParam(url);
+    if (directParam) {
+        return { src: directParam, type: inferPlayerType(directParam) };
     }
 
     if (url.includes('mp4upload.com') || url.includes('streamtape.com') || url.includes('vidstreaming.io')) {
@@ -180,6 +288,49 @@ function resolveEmbedToDirectUrl(url: string): { src: string, type: string } {
     }
 
     return { src: url, type: 'iframe' };
+}
+
+function extractDirectPlayersFromHtml(html: string, sourceName: string, baseUrl: string): ScrapedPlayer[] {
+    const players: ScrapedPlayer[] = [];
+    const $ = cheerio.load(html);
+
+    $('iframe').each((i, el) => {
+        const src = normalizeUrl($(el).attr('src') || '', baseUrl);
+        if (!src) return;
+        const resolved = resolveEmbedToDirectUrl(src);
+        players.push({
+            name: `${sourceName} Player ${i + 1}`,
+            src: resolved.src,
+            type: resolved.type,
+            quality: resolved.src.includes('1080') || resolved.src.includes('FHD') ? '1080p' : 'HD'
+        });
+    });
+
+    $('meta[itemprop="embedURL"], meta[itemprop="contentUrl"], meta[itemprop="contentURL"], link[itemprop="embedURL"], source').each((i, el) => {
+        const raw = $(el).attr('content') || $(el).attr('href') || $(el).attr('src');
+        const src = normalizeUrl(raw || '', baseUrl);
+        if (!src) return;
+        players.push({
+            name: `${sourceName} Direto ${i + 1}`,
+            src,
+            type: inferPlayerType(src),
+            quality: src.includes('1080') || src.includes('FHD') ? '1080p' : 'HD'
+        });
+    });
+
+    const directRegex = /https?:\\?\/\\?\/[^\s"'<>]+?\.(?:m3u8|mp4)(?:[^\s"'<>]*)?/gi;
+    for (const match of html.matchAll(directRegex)) {
+        const src = normalizeUrl(match[0], baseUrl);
+        if (!src) continue;
+        players.push({
+            name: `${sourceName} Direto`,
+            src,
+            type: inferPlayerType(src),
+            quality: src.includes('1080') || src.includes('FHD') ? '1080p' : 'HD'
+        });
+    }
+
+    return uniquePlayers(players);
 }
 
 /**
@@ -203,27 +354,27 @@ async function resolveBloggerUrl(url: string): Promise<{ src: string, type: stri
         // Fallback: Tenta buscar por stream_map ou links diretos de vídeo no HTML
         const streamsMatch = html.match(/"streams":\[([^\]]+)\]/);
         if (streamsMatch && streamsMatch[1]) {
-            const streams = JSON.parse(`[${streamsMatch[1]}]`);
+            const streams = JSON.parse(`[${streamsMatch[1]}]`) as BloggerStream[];
             // Prioriza a maior qualidade disponível (geralmente a última na lista do Blogger)
-            const bestStream = streams.sort((a: any, b: any) => (parseInt(b.format_id) || 0) - (parseInt(a.format_id) || 0))[0];
+            const bestStream = streams.sort((a, b) => (parseInt(String(b.format_id)) || 0) - (parseInt(String(a.format_id)) || 0))[0];
             if (bestStream?.play_url) {
                 return { src: bestStream.play_url, type: 'mp4', quality: '1080p' };
             }
         }
-    } catch (e) {
+    } catch {
         logger.warn(`[Resolver] Falha ao resolver Blogger: ${url}`);
     }
     return null;
 }
 
-async function extractDooplayPlayers(html: string, baseUrl: string): Promise<{ name: string; src: string; type: string }[]> {
-    const players: { name: string; src: string; type: string }[] = [];
+async function extractDooplayPlayers(html: string, baseUrl: string): Promise<ScrapedPlayer[]> {
+    const players: ScrapedPlayer[] = [];
     const $ = cheerio.load(html);
     const options = $('li.dooplay_player_option');
 
     if (options.length === 0) return players;
 
-    const promises: Promise<any>[] = [];
+    const promises: Promise<ScrapedPlayer | null>[] = [];
 
     options.each((i, el) => {
         const dataPost = $(el).attr('data-post');
@@ -260,8 +411,8 @@ async function extractDooplayPlayers(html: string, baseUrl: string): Promise<{ n
     return players;
 }
 
-function extractStaticIframes(html: string): { name: string; src: string; type: string }[] {
-    const players: { name: string; src: string; type: string }[] = [];
+function extractStaticIframes(html: string): ScrapedPlayer[] {
+    const players: ScrapedPlayer[] = [];
     const blocklist = ['facebook', 'disqus', 'googletagmanager', 'googlesyndication', 'doubleclick'];
     const $ = cheerio.load(html);
 
@@ -372,19 +523,248 @@ async function trySearchPath(title: string, episode: number, baseUrl: string, ve
     return null;
 }
 
+function scoreHrefForVersion(href: string, version?: string): number {
+    const lower = href.toLowerCase();
+    if (version === 'dub') return lower.includes('dublado') || lower.includes('dub') ? 2 : -1;
+    if (version === 'sub') return lower.includes('dublado') || lower.includes('dub') ? -1 : 1;
+    return 1;
+}
+
+function findBestEpisodeUrl(html: string, baseUrl: string, title: string, episode: number, version?: string): string | null {
+    const $ = cheerio.load(html);
+    const titleSlug = slugify(title);
+    const epTokens = [
+        `episodio-${padEpisode(episode)}`,
+        `episodio-${episode}`,
+        `episode-${padEpisode(episode)}`,
+        `episode-${episode}`,
+        `/videos/`
+    ];
+    let best: { url: string; score: number } | null = null;
+
+    const links = $('a[href]').toArray();
+    for (const el of links) {
+        const href = $(el).attr('href');
+        if (!href) continue;
+
+        const absolute = normalizeUrl(href, baseUrl);
+        if (!absolute) continue;
+
+        const haystack = `${href} ${$(el).text()}`.toLowerCase();
+        const hrefSlug = slugify(haystack);
+        const matchesEpisode = epTokens.some(token => haystack.includes(token));
+        const matchesTitle = hrefSlug.includes(titleSlug) || titleSlug.includes(hrefSlug.slice(0, Math.min(hrefSlug.length, titleSlug.length)));
+        const versionScore = scoreHrefForVersion(haystack, version);
+
+        if (versionScore < 0 || !matchesEpisode) continue;
+
+        const score = versionScore + (matchesTitle ? 3 : 0) + (absolute.includes('/videos/') ? 1 : 0);
+        if (!best || score > best.score) {
+            best = { url: absolute, score };
+        }
+    }
+
+    return best?.url || null;
+}
+
+async function scrapeAnimesDigital(title: string, episode: number, version?: string): Promise<ScrapedPlayer[] | null> {
+    const baseUrl = 'https://animesdigital.org';
+    const titleQuery = version === 'dub' ? `${title} dublado` : title;
+    const searchHtml = await fetchWithAntiBot(`${baseUrl}/?s=${encodeURIComponent(titleQuery)}`);
+    if (!searchHtml) return null;
+
+    const episodeUrl = findBestEpisodeUrl(searchHtml, baseUrl, title, episode, version);
+    if (!episodeUrl) return null;
+
+    const html = await fetchWithAntiBot(episodeUrl);
+    if (!html) return null;
+
+    return extractDirectPlayersFromHtml(html, 'AnimesDigital', baseUrl);
+}
+
+async function scrapeSushiAnimes(title: string, episode: number, version?: string): Promise<ScrapedPlayer[] | null> {
+    const baseUrl = 'https://sushianimes.com.br';
+    const titleSlug = slugify(title);
+    const wantedDub = version === 'dub';
+    const candidates = [
+        `${baseUrl}/anime/${titleSlug}${wantedDub ? '-dublado' : ''}`,
+        `${baseUrl}/anime/${titleSlug}`,
+        `${baseUrl}/search?q=${encodeURIComponent(title)}`
+    ];
+
+    let animePageUrl: string | null = null;
+    for (const candidate of candidates) {
+        const html = await fetchWithAntiBot(candidate);
+        if (!html) continue;
+
+        if (candidate.includes('/anime/') && html.includes('episodes tab-content')) {
+            animePageUrl = candidate;
+            break;
+        }
+
+        const $ = cheerio.load(html);
+        $('a[href*="/anime/"]').each((_, el) => {
+            if (animePageUrl) return;
+            const href = $(el).attr('href');
+            if (!href) return;
+            const score = scoreHrefForVersion(href, version);
+            if (score < 0) return;
+            const hrefSlug = slugify(href);
+            if (hrefSlug.includes(titleSlug) || titleSlug.includes(hrefSlug)) {
+                animePageUrl = normalizeUrl(href, baseUrl);
+            }
+        });
+        if (animePageUrl) break;
+    }
+
+    if (!animePageUrl) return null;
+
+    const animeHtml = await fetchWithAntiBot(animePageUrl);
+    if (!animeHtml) return null;
+
+    const episodeUrl = findBestEpisodeUrl(animeHtml, baseUrl, title, episode, version);
+    if (!episodeUrl) return null;
+
+    const episodeHtml = await fetchWithAntiBot(episodeUrl);
+    if (!episodeHtml) return null;
+
+    const $ = cheerio.load(episodeHtml);
+    const embedIds = new Set<string>();
+    $('[data-embed]').each((_, el) => {
+        const id = $(el).attr('data-embed');
+        if (id) embedIds.add(id);
+    });
+
+    const players: ScrapedPlayer[] = [];
+    for (const id of embedIds) {
+        try {
+            const res = await fetch(`${baseUrl}/ajax/embed`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'User-Agent': UA,
+                    'Referer': episodeUrl,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `id=${encodeURIComponent(id)}`
+            });
+            if (!res.ok) continue;
+            const embedHtml = await res.text();
+            const embedMatch = embedHtml.match(/playerEmbed\s*=\s*["']([^"']+)["']/);
+            const src = normalizeUrl(embedMatch?.[1] || '', baseUrl);
+            if (src) {
+                const resolved = resolveEmbedToDirectUrl(src);
+                players.push({
+                    name: `SushiAnimes ${version === 'dub' ? 'DUB' : 'SUB'}`,
+                    src: resolved.src,
+                    type: resolved.type,
+                    quality: resolved.src.includes('1080') || resolved.src.includes('4k') ? '1080p' : 'HD'
+                });
+            } else {
+                players.push(...extractDirectPlayersFromHtml(embedHtml, 'SushiAnimes', baseUrl));
+            }
+        } catch (error) {
+            logger.warn(`[SushiAnimes] Falha ao resolver embed ${id}: ${error}`);
+        }
+    }
+
+    return uniquePlayers(players);
+}
+
+async function scrapeAnimesBR(title: string, episode: number, version?: string): Promise<ScrapedPlayer[] | null> {
+    const baseUrl = 'https://animesbr.lat';
+    const search = await fetchWithAntiBot(`${baseUrl}/buscar/sugestoes?q=${encodeURIComponent(title)}`, true);
+    const searchData = search && typeof search === 'object' && 'data' in search ? search.data : null;
+    const items = Array.isArray(searchData) ? searchData as AnimesBrSuggestion[] : [];
+    if (items.length === 0) return null;
+
+    const anime = items
+        .filter((item: AnimesBrSuggestion) => item.type === 'anime' && item.slug)
+        .sort((a: AnimesBrSuggestion, b: AnimesBrSuggestion) => scoreHrefForVersion(b.slug || '', version) - scoreHrefForVersion(a.slug || '', version))[0];
+
+    if (!anime?.slug || scoreHrefForVersion(anime.slug, version) < 0) return null;
+
+    const episodeSlug = `${anime.slug}-episodio-${padEpisode(episode)}`;
+    const episodeUrl = `${baseUrl}/animes/${anime.slug}/episodios/${episodeSlug}`;
+    const html = await fetchWithAntiBot(episodeUrl);
+    if (!html) return null;
+
+    const decoded = decodeHtmlEntities(html);
+    const players: ScrapedPlayer[] = [];
+    const sourceRegex = /"url":"([^"]*\/(?:player|media)\/source\/[^"]+)"/g;
+
+    for (const match of decoded.matchAll(sourceRegex)) {
+        const playerUrl = normalizeUrl(match[1], baseUrl);
+        if (!playerUrl) continue;
+
+        try {
+            const parsed = new URL(playerUrl);
+            const directSource = parsed.searchParams.get('source');
+            const src = directSource ? normalizeUrl(decodeURIComponent(directSource), baseUrl) : playerUrl;
+            if (!src) continue;
+            players.push({
+                name: `AnimesBR ${version === 'dub' ? 'DUB' : 'SUB'}`,
+                src,
+                type: inferPlayerType(src),
+                quality: src.includes('1080') || src.includes('FHD') ? '1080p' : 'HD'
+            });
+        } catch {
+            players.push({ name: 'AnimesBR Player', src: playerUrl, type: 'iframe', quality: 'HD' });
+        }
+    }
+
+    players.push(...extractDirectPlayersFromHtml(decoded, 'AnimesBR', baseUrl));
+    return uniquePlayers(players);
+}
+
+async function scrapeSuperAnimes(title: string, episode: number, version?: string): Promise<ScrapedPlayer[] | null> {
+    const baseUrl = 'https://superanimes.in';
+    const query = version === 'dub' ? `${title} dublado` : title;
+    const searchHtml = await fetchWithAntiBot(`${baseUrl}/busca/?search_query=${encodeURIComponent(query)}`);
+    if (!searchHtml) return null;
+
+    const episodeUrl = findBestEpisodeUrl(searchHtml, baseUrl, title, episode, version);
+    if (!episodeUrl) return null;
+
+    const html = await fetchWithAntiBot(episodeUrl);
+    if (!html) return null;
+
+    return extractDirectPlayersFromHtml(html, 'SuperAnimes', baseUrl);
+}
+
+async function scrapeSpecialSources(title: string, episode: number, version?: string): Promise<SpecialScrapeResult[]> {
+    const resolvers = [
+        { source: 'https://animesdigital.org', run: () => scrapeAnimesDigital(title, episode, version) },
+        { source: 'https://sushianimes.com.br', run: () => scrapeSushiAnimes(title, episode, version) },
+        { source: 'https://animesbr.lat', run: () => scrapeAnimesBR(title, episode, version) },
+        { source: 'https://superanimes.in', run: () => scrapeSuperAnimes(title, episode, version) },
+    ];
+
+    const settled = await Promise.allSettled(resolvers.map(async resolver => ({
+        source: resolver.source,
+        players: await resolver.run()
+    })));
+
+    return settled
+        .filter((result): result is PromiseFulfilledResult<{ source: string; players: ScrapedPlayer[] | null }> => result.status === 'fulfilled')
+        .map(result => ({ source: result.value.source, players: result.value.players || [] }))
+        .filter(result => result.players.length > 0);
+}
+
 // ============================================================================
 // MAIN HANDLER
 // ============================================================================
 
 export async function POST(req: Request) {
     try {
-        const { title, episode, version } = await req.json();
+        const { title, episode, version, preferredSource } = await req.json();
 
         if (!title || typeof episode !== 'number') {
             return NextResponse.json({ error: 'Parâmetros inválidos. Informe title (string) e episode (number).' }, { status: 400 });
         }
 
-        const cacheKey = `${slugify(title)}-ep-${episode}-${version || 'any'}`;
+        const preferredSourceKey = typeof preferredSource === 'string' ? preferredSource : 'any-source';
+        const cacheKey = `${slugify(title)}-ep-${episode}-${version || 'any'}-${preferredSourceKey}`;
         const cached = cache.get(cacheKey);
 
         if (cached) {
@@ -393,6 +773,25 @@ export async function POST(req: Request) {
         }
 
         logger.info(`[Scraper] Iniciando busca para: ${title} (EP ${episode})`);
+
+        const specialResults = await scrapeSpecialSources(title, episode, version);
+        const prioritizedResults = typeof preferredSource === 'string'
+            ? specialResults.filter(result => result.source.includes(preferredSource))
+            : specialResults;
+        const preferredResults = prioritizedResults.length > 0 ? prioritizedResults : specialResults;
+        const specialPlayers = uniquePlayers(preferredResults.flatMap(result => result.players));
+
+        if (specialPlayers.length > 0) {
+            const resultData = {
+                players: specialPlayers,
+                meta: {
+                    title: `${title} Episodio ${episode}`,
+                    source: preferredResults.map(result => result.source).join(', ')
+                }
+            };
+            cache.set(cacheKey, resultData);
+            return NextResponse.json(resultData);
+        }
 
         let successfulSource: string | null = null;
         let epHtml: string | null = null;
@@ -423,7 +822,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ players: [] });
         }
 
-        let players: any[] = await extractDooplayPlayers(epHtml, successfulSource);
+        let players: ScrapedPlayer[] = await extractDooplayPlayers(epHtml, successfulSource);
 
         if (players.length === 0) {
             players = extractStaticIframes(epHtml);

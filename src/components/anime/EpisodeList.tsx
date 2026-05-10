@@ -35,10 +35,13 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
       
       if (libraryItem?.status === 'COMPLETED') {
         setUserProgress(totalEpisodes);
-      } else if (isRewatching && localItem) {
-        setUserProgress(localItem.episode);
       } else {
-        setUserProgress(aniListProgress);
+        // Prioriza o progresso do AniList (que no modo REPEATING reinicia do 0)
+        // Se houver histórico local mais avançado (não sincronizado), usa ele.
+        const aniListProgress = libraryItem?.progress || 0;
+        const historyProgress = localItem?.episode || 0;
+        
+        setUserProgress(Math.max(aniListProgress, historyProgress));
       }
     };
 

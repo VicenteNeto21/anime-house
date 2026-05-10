@@ -122,17 +122,19 @@ export default function AddToList({ animeId, totalEpisodes }: AddToListProps) {
         <button 
           onClick={() => setShowDropdown(!showDropdown)}
           disabled={updating}
-          className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
+          className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border group/btn ${
             userList 
-              ? `${currentStatus?.bg} ${currentStatus?.color} border-white/5 hover:brightness-110` 
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-400 border-white/5'
+              ? `${currentStatus?.bg} ${currentStatus?.color} border-white/10 hover:border-white/20 hover:brightness-110 shadow-lg shadow-black/20` 
+              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 border-white/5'
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${currentStatus?.color || 'bg-slate-600'} animate-pulse`}></div>
-            {currentStatus?.label || 'Adicionar à Lista'}
+            <div className="flex items-center justify-center w-5 h-5">
+              <i className={`fa-solid ${currentStatus?.icon || 'fa-plus'} text-[10px]`}></i>
+            </div>
+            <span className="truncate">{currentStatus?.label || 'Adicionar à Lista'}</span>
           </div>
-          <i className={`fa-solid fa-chevron-down text-[8px] transition-transform duration-300 ${showDropdown ? 'rotate-180' : ''}`}></i>
+          <i className={`fa-solid fa-chevron-down text-[8px] opacity-50 transition-transform duration-500 group-hover/btn:scale-110 ${showDropdown ? 'rotate-180' : ''}`}></i>
         </button>
 
         {showDropdown && (

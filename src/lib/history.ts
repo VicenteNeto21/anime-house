@@ -5,14 +5,26 @@ export interface HistoryItem {
   format: string;
   episode: number;
   updatedAt: number;
+  resumeTime?: number;
+  resumeDuration?: number;
+  resumeSource?: string;
+  resumeSrc?: string;
+  progress?: number;
   isFromAniList?: boolean;
 }
+
+type WatchHistoryAnime = {
+  id: string | number;
+  title: string;
+  poster: string;
+  format?: string;
+};
 
 const STORAGE_KEY = 'ah_watch_history';
 const MAX_ITEMS = 20;
 
 export const WatchHistory = {
-  save(anime: any, episode: number) {
+  save(anime: WatchHistoryAnime, episode: number) {
     if (typeof window === 'undefined') return;
 
     let history = this.getAll();
@@ -22,7 +34,7 @@ export const WatchHistory = {
       id: anime.id,
       title: anime.title,
       cover: anime.poster,
-      format: anime.format,
+      format: anime.format || 'Anime',
       episode: episode,
       updatedAt: Date.now(),
     };

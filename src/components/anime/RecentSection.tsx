@@ -8,8 +8,9 @@ interface RecentSectionProps {
 
 export default async function RecentSection({ page = 1 }: RecentSectionProps) {
   const { animes, pageInfo } = await AniListAPI.getRecent(page, 20);
+  const activeAnimes = animes.filter((anime) => anime.status !== 'Finalizado');
 
-  if (!animes || animes.length === 0) return null;
+  if (!activeAnimes || activeAnimes.length === 0) return null;
 
   // Gerar array de páginas para a paginação numerada
   const totalPages = pageInfo?.lastPage || 1;
@@ -43,8 +44,8 @@ export default async function RecentSection({ page = 1 }: RecentSectionProps) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {animes.map((anime, index) => (
-            <EpisodeCard key={`recent-${anime.id}-${index}`} anime={anime} />
+          {activeAnimes.map((anime, index) => (
+            <EpisodeCard key={`recent-${anime.id}-${index}`} anime={anime} hideIfCompleted />
           ))}
         </div>
 

@@ -8,7 +8,9 @@ import AnimeCard from '@/components/anime/AnimeCard';
 export default async function Home({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const { page } = await searchParams;
   const currentPage = parseInt(page || '1');
-  const trending = await AniListAPI.getTrending(6);
+  const trending = (await AniListAPI.getTrending(18))
+    .filter((anime) => anime.status !== 'Finalizado')
+    .slice(0, 6);
 
 
   return (

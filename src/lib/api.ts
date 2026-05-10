@@ -8,6 +8,7 @@ export interface Anime {
   title: string;
   titleEnglish?: string;
   titleRomaji?: string;
+  titleNative?: string;
   poster: string;
   banner?: string;
   description?: string;
@@ -26,6 +27,15 @@ export interface Anime {
   currentEpisode?: number;
   studios?: string[];
   recommendations?: Anime[];
+  relations?: {
+    relationType: string;
+    id: number | string;
+    title: string;
+    poster: string;
+    format: string;
+    year: string | number;
+    status: string;
+  }[];
   trailer?: {
     id: string;
     site: string;
@@ -45,6 +55,10 @@ export interface Anime {
     thumbnail: string;
     url: string;
   }[];
+  tags?: string[];
+  popularity?: number;
+  favorites?: number;
+  isFavourite?: boolean;
 }
 
 
@@ -249,12 +263,26 @@ export const AniListAPI = {
     return promise;
   },
 
+  async toggleFavourite(animeId: number, token: string) {
+    const gql = `
+      mutation ($id: Int) {
+        ToggleFavourite (animeId: $id) {
+          anime {
+            nodes {
+              id
+            }
+          }
+        }
+      }
+    `;
+    return this.query(gql, { id: animeId }, token);
+  },
+
   mapAniListToInternal(media: any, currentEpisode?: number): Anime | null {
     if (!media) return null;
 
     const translatedGenres = (media.genres || []).map((g: string) => this.maps.genres[g] || g);
-    const seasonName = this.maps.seasons[media.season] || media.season || "";
-    const seasonDisplay = seasonName ? `${seasonName} ${media.seasonYear}` : String(media.seasonYear || "N/A");
+    const seasonDisplay = this.maps.seasons[media.season] || media.season || "N/A";
 
     const recommendations = (media.recommendations?.nodes || [])
       .map((node: any) => node.mediaRecommendation ? {
@@ -311,7 +339,30 @@ export const AniListAPI = {
           thumbnail: ep.thumbnail,
           url: ep.url
         };
-      })
+      }),
+      relations: (media.relations?.edges || [])
+        .map((edge: any) => ({
+          relationType: edge.relationType,
+          id: edge.node.id,
+          type: edge.node.type,
+          title: edge.node.title.romaji || edge.node.title.english,
+          poster: edge.node.coverImage?.large,
+          format: this.maps.formats[edge.node.format] || edge.node.format,
+          year: edge.node.seasonYear || '??',
+          startDate: edge.node.startDate,
+          status: edge.node.status === 'RELEASING' ? 'Lançando' : 'Finalizado'
+        }))
+        .filter((r: any) => r.relationType !== 'CHARACTER' && r.type === 'ANIME')
+        .sort((a: any, b: any) => {
+          const dateA = (a.startDate?.year || 0) * 10000 + (a.startDate?.month || 0) * 100 + (a.startDate?.day || 0);
+          const dateB = (b.startDate?.year || 0) * 10000 + (b.startDate?.month || 0) * 100 + (b.startDate?.day || 0);
+          return dateA - dateB;
+        }),
+      tags: media.tags?.map((t: any) => t.name).slice(0, 10),
+      popularity: media.popularity,
+      favorites: media.favourites,
+      isFavourite: media.isFavourite,
+      titleNative: media.title?.native
     };
   },
 
@@ -375,7 +426,7 @@ export const AniListAPI = {
     const gql = `
     query ($id: Int, $search: String) {
       Media (id: $id, search: $search, type: ANIME) {
-        id idMal title { romaji english native }
+        id idMal title { romaji english native } isFavourite
         coverImage { extraLarge large }
         bannerImage
         description
@@ -386,6 +437,9 @@ export const AniListAPI = {
         status
         format
         genres
+        tags { name }
+        popularity
+        favourites
         studios(isMain: true) { nodes { name } }
         trailer { id site }
         nextAiringEpisode { episode }
@@ -414,19 +468,28 @@ export const AniListAPI = {
           thumbnail
           url
         }
+        relations {
+          edges {
+            relationType
+            node {
+              id type title { romaji english } coverImage { large } format status seasonYear
+              startDate { year month day }
+            }
+          }
+        }
       }
     }`;
     const variables = isIdNumeric ? { id: Number(id) } : { search: String(id).replace(/-/g, ' ') };
-    const data = await this.query(gql, variables);
+    const data = await this.query(gql, variables, undefined, true); // Force refresh para garantir novos campos (Seasons)
     const anime = this.mapAniListToInternal(data?.Media);
 
-    if (anime) {
+    if (anime && data?.Media) {
       if (anime.description) {
         anime.description = await this.translateText(anime.description);
       }
       // Adicionar trailer e elenco ao objeto
-      anime.trailer = data?.Media?.trailer;
-      anime.characters = data?.Media?.characters?.edges?.map((edge: any) => ({
+      anime.trailer = data.Media.trailer;
+      anime.characters = data.Media.characters?.edges?.map((edge: any) => ({
         role: edge.role,
         name: edge.node.name.full,
         image: edge.node.image.large,
@@ -455,10 +518,20 @@ export const AniListAPI = {
   },
 
   async translateText(text: string): Promise<string> {
+    if (!text) return "";
     try {
-      const response = await fetch(`/api/translate?text=${encodeURIComponent(text)}`);
+      // Limpar HTML básico antes de traduzir
+      const cleanText = text.replace(/<[^>]*>?/gm, '');
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(cleanText)}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) return text;
+      
       const data = await response.json();
-      return data.translatedText || text;
+      if (!data || !data[0]) return text;
+      
+      const translated = data[0].map((item: any) => item[0]).join('');
+      return translated || text;
     } catch (error) {
       console.error('TRANSLATION_ERROR:', error);
       return text;
@@ -538,7 +611,7 @@ export const AniListAPI = {
         airingSchedules (airingAt_greater: $start, airingAt_lesser: $end, sort: TIME) {
           id episode airingAt
           media {
-            id title { romaji english } coverImage { large } format
+            id title { romaji english } coverImage { large } format status episodes
           }
         }
       }
@@ -564,7 +637,9 @@ export const AniListAPI = {
           id: item.media.id,
           title: item.media.title.romaji || item.media.title.english,
           poster: item.media.coverImage.large,
-          format: this.maps.formats[item.media.format] || item.media.format
+          format: this.maps.formats[item.media.format] || item.media.format,
+          status: item.media.status === 'RELEASING' ? 'Em Lançamento' : 'Finalizado',
+          episodes: item.media.episodes || '??'
         }
       }));
   },

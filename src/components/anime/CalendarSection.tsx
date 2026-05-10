@@ -17,6 +17,7 @@ export default function CalendarSection() {
   const [schedules, setSchedules] = useState<AiringSchedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeDay, setActiveDay] = useState(new Date().getDay());
+  const [now, setNow] = useState(0);
 
   const days = [
     { label: 'Dom', value: 0 },
@@ -53,6 +54,7 @@ export default function CalendarSection() {
       } catch (error) {
         console.error('Erro ao buscar calendário:', error);
       } finally {
+        setNow(Date.now());
         setLoading(false);
       }
     }
@@ -61,7 +63,7 @@ export default function CalendarSection() {
 
   const filteredSchedules = schedules.filter(s => {
     const date = new Date(s.airingAt * 1000);
-    return date.getDay() === activeDay;
+    return date.getDay() === activeDay && s.media.status !== 'Finalizado';
   });
 
   return (
@@ -143,7 +145,7 @@ export default function CalendarSection() {
 
                       
                       {/* Lançado Badge */}
-                      {item.airingAt * 1000 < Date.now() && (
+                      {now > 0 && item.airingAt * 1000 < now && (
                         <div className="absolute top-1 left-1 bg-green-500 text-[7px] font-black px-1.5 py-0.5 rounded text-white uppercase">
                           Lançado
                         </div>

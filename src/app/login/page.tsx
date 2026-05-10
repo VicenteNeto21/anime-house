@@ -7,8 +7,8 @@ import { motion } from 'framer-motion';
 
 export default function LoginPage() {
   const clientId = process.env.NEXT_PUBLIC_ANILIST_CLIENT_ID || '10978';
-  const redirectUri = process.env.NEXT_PUBLIC_ANILIST_REDIRECT_URL || 'http://localhost:3000';
-  const anilistAuthUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+  const redirectUri = process.env.NEXT_PUBLIC_ANILIST_REDIRECT_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+  const anilistAuthUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
   
   useEffect(() => {
     console.log('--- OAuth Debug Info ---');

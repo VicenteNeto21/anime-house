@@ -1,4 +1,4 @@
-import { AniListAPI } from '@/lib/api';
+import { AniListAPI, Anime } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -14,7 +14,7 @@ export default async function TopRanking() {
   const leftCol = topAnimes.filter((_, i) => i % 2 === 0);
   const rightCol = topAnimes.filter((_, i) => i % 2 !== 0);
 
-  const renderItem = (anime: any, index: number, isRight: boolean) => {
+  const renderItem = (anime: Anime, index: number, isRight: boolean) => {
     const rank = isRight ? (index * 2) + 2 : (index * 2) + 1;
     const rankColor = rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-slate-200' : rank === 3 ? 'text-orange-500' : 'text-slate-500';
     
