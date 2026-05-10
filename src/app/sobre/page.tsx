@@ -86,6 +86,10 @@ export default function SobrePage() {
                 { name: 'Netflix', url: 'https://netflix.com', color: '#e50914', icon: 'https://www.google.com/s2/favicons?domain=netflix.com&sz=128' },
                 { name: 'Disney+', url: 'https://disneyplus.com', color: '#0063e5', icon: 'https://www.google.com/s2/favicons?domain=disneyplus.com&sz=128' },
                 { name: 'Prime Video', url: 'https://primevideo.com', color: '#00a8e1', icon: 'https://www.google.com/s2/favicons?domain=primevideo.com&sz=128' },
+                { name: 'Max', url: 'https://max.com', color: '#0026ff', icon: 'https://www.google.com/s2/favicons?domain=max.com&sz=128' },
+                { name: 'Pluto TV', url: 'https://pluto.tv', color: '#000000', icon: 'https://www.google.com/s2/favicons?domain=pluto.tv&sz=128' },
+                { name: 'Globoplay', url: 'https://globoplay.globo.com', color: '#ee1c25', icon: 'https://www.google.com/s2/favicons?domain=globoplay.globo.com&sz=128' },
+                { name: 'YouTube', url: 'https://youtube.com', color: '#ff0000', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
               ].map((platform) => (
                 <a 
                   key={platform.name}
