@@ -7,6 +7,95 @@ import { WatchHistory } from '@/lib/history';
 import AddToList from '@/components/anime/AddToList';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import Hls from 'hls.js';
+
+const slugify = (title: string) => {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase()
+    .trim();
+};
+
+const pixelSlugVariants = (title: string) => {
+  const baseSlug = slugify(title);
+  const variants = new Set([baseSlug]);
+  const seasonAliases: Array<[RegExp, string]> = [
+    [/-2nd-season$/i, '-2'],
+    [/-second-season$/i, '-2'],
+    [/-3rd-season$/i, '-3'],
+    [/-third-season$/i, '-3'],
+    [/-4th-season$/i, '-4'],
+    [/-fourth-season$/i, '-4'],
+    [/-season-2$/i, '-2'],
+    [/-season-3$/i, '-3'],
+    [/-season-4$/i, '-4'],
+  ];
+
+  for (const [pattern, replacement] of seasonAliases) {
+    if (pattern.test(baseSlug)) variants.add(baseSlug.replace(pattern, replacement));
+  }
+
+  return Array.from(variants);
+};
+
+const anivideoUrl = (mp4Url: string) => {
+  return `https://api.anivideo.net/videohls.php?d=${encodeURIComponent(mp4Url)}`;
+};
+
+const isHlsSource = (url?: string | null) => {
+  return Boolean(url && (url.includes('.m3u8') || url.includes('videohls.php')));
+};
+
+const anivideoMp4Variants = (title: string, episode: number) => {
+  const epStr = episode.toString().padStart(2, '0');
+  const variants: string[] = [];
+
+  for (const slug of pixelSlugVariants(title)) {
+    const firstLetter = slug.charAt(0);
+    variants.push(`https://cdn-s01.mywallpaper-4k-image.net/stream/${firstLetter}/${slug}/${epStr}.mp4`);
+    variants.push(`https://cdn-s01.mywallpaper-4k-image.net/stream/${firstLetter}/${slug}-legendado/${epStr}.mp4`);
+    variants.push(`https://cdn-s01.mywallpaper-4k-image.net/stream/${firstLetter}/${slug}-dublado/${epStr}.mp4`);
+  }
+
+  return variants;
+};
+
+type ResolvedPlayer = {
+  name: string;
+  src: string;
+  type?: string;
+  quality?: string;
+  source?: string;
+  confidence?: number;
+};
+
+type ResumeSnapshot = {
+  time: number;
+  duration?: number;
+  animeId?: string | number;
+  episode?: number;
+  source?: string;
+  server?: string;
+  src?: string;
+  updatedAt: number;
+  reason?: string;
+};
+
+type ResolverMemoryItem = {
+  source: string;
+  src: string;
+  type?: string;
+  quality?: string;
+  version?: 'sub' | 'dub';
+  episode?: number;
+  confidence?: number;
+  successCount?: number;
+  updatedAt: number;
+};
 
 export default function PlayerPage() {
   const params = useParams();
@@ -26,6 +115,7 @@ export default function PlayerPage() {
   // Update URL without full navigation when episode changes
   const changeEpisode = (epNum: number) => {
     if (epNum === activeEp) return;
+    saveResumeProgress('episode-change');
     setActiveEp(epNum);
     // Use window.history to update URL without triggering Next.js route change re-render
     const slug = anime ? AniListAPI.slugify(anime.title) : id;
@@ -35,8 +125,8 @@ export default function PlayerPage() {
   const [anime, setAnime] = useState<Anime | null>(null);
   const [tmdbId, setTmdbId] = useState<number | null>(null);
   const [server, setServer] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem('ah_server') || 'direct';
-    return 'direct';
+    if (typeof window !== 'undefined') return localStorage.getItem('ah_server') || 'ao_to';
+    return 'ao_to';
   });
   const [version, setVersion] = useState<'sub' | 'dub'>(() => {
     if (typeof window !== 'undefined') return (localStorage.getItem('ah_version') as 'sub' | 'dub') || 'sub';
@@ -47,6 +137,10 @@ export default function PlayerPage() {
   const [autoPlayTimer, setAutoPlayTimer] = useState<number | null>(null);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('ah_autoplay') !== 'false';
+    return true;
+  });
+  const [autoSkipEnabled, setAutoSkipEnabled] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('ah_autoskip') !== 'false';
     return true;
   });
   const [isPlaying, setIsPlaying] = useState(false);
@@ -62,7 +156,7 @@ export default function PlayerPage() {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiPlayers, setAiPlayers] = useState<{name: string, src: string, type?: string, quality?: string}[]>([]);
+  const [aiPlayers, setAiPlayers] = useState<ResolvedPlayer[]>([]);
   const [userAniListInfo, setUserAniListInfo] = useState<any>(null);
   const [hasSynced, setHasSynced] = useState(false);
   const [showSyncToast, setShowSyncToast] = useState(false);
@@ -71,16 +165,216 @@ export default function PlayerPage() {
   const [seekTooltip, setSeekTooltip] = useState<{visible: boolean; time: string; x: number}>({visible: false, time: '00:00', x: 0});
   const [skipTimes, setSkipTimes] = useState<{ op?: {start: number, end: number}, ed?: {start: number, end: number}, recap?: {start: number, end: number} }>({});
   const [activeSkip, setActiveSkip] = useState<'op' | 'ed' | 'recap' | null>(null);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [showMainServerMenu, setShowMainServerMenu] = useState(false);
+  const [isAmbientMode, setIsAmbientMode] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('ah_ambient') !== 'false';
+    return true;
+  });
+  const ambientCanvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
-
   const episodesContainerRef = useRef<HTMLDivElement>(null);
   const activeEpisodeRef = useRef<HTMLDivElement>(null);
+  const skippedSegmentsRef = useRef<Set<string>>(new Set());
+  const shouldAutoStartRef = useRef(false);
+  const lastAniListStatusSyncRef = useRef<string | null>(null);
+  const lastAniListProgressSyncRef = useRef<string | null>(null);
+  const videoFailureRef = useRef<(() => void) | null>(null);
+
+  // Resume Playback State
+  const [resumeTime, setResumeTime] = useState<number | null>(null);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const hasCheckedResume = useRef(false);
+
+  const getActiveSourceMeta = () => {
+    const selectedAiIndex = server.startsWith('ai_') ? parseInt(server.replace('ai_', '')) : -1;
+    const selectedPlayer = selectedAiIndex >= 0 ? aiPlayers[selectedAiIndex] : null;
+
+    return {
+      source: selectedPlayer?.source || server,
+      server,
+      src: resolvedUrl || selectedPlayer?.src,
+    };
+  };
+
+  const getResumeKey = () => {
+    if (!anime?.id) return null;
+    return `ah_resume_${anime.id}_${currentEp}`;
+  };
+
+  const parseResumeSnapshot = (saved: string): ResumeSnapshot | null => {
+    try {
+      const parsed = JSON.parse(saved) as Partial<ResumeSnapshot> | number;
+      if (typeof parsed === 'number' && Number.isFinite(parsed)) {
+        return {
+          time: parsed,
+          updatedAt: Date.now(),
+          reason: 'legacy',
+        };
+      }
+
+      if (typeof parsed === 'object' && typeof parsed.time === 'number' && Number.isFinite(parsed.time)) {
+        return {
+          time: parsed.time,
+          duration: typeof parsed.duration === 'number' && Number.isFinite(parsed.duration) ? parsed.duration : undefined,
+          animeId: parsed.animeId,
+          episode: typeof parsed.episode === 'number' ? parsed.episode : undefined,
+          source: parsed.source,
+          server: parsed.server,
+          src: parsed.src,
+          updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
+          reason: parsed.reason,
+        };
+      }
+    } catch {
+      const legacyTime = parseFloat(saved);
+      if (Number.isFinite(legacyTime)) {
+        return {
+          time: legacyTime,
+          updatedAt: Date.now(),
+          reason: 'legacy',
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const readResumeSnapshot = (): ResumeSnapshot | null => {
+    if (typeof window === 'undefined') return null;
+
+    const key = getResumeKey();
+    const keys = [
+      key,
+      `ah_resume_${id}_${currentEp}`,
+      `ah_time_${id}_${currentEp}`,
+      anime?.id ? `ah_time_${anime.id}_${currentEp}` : null,
+    ].filter(Boolean) as string[];
+
+    for (const resumeKey of keys) {
+      const saved = localStorage.getItem(resumeKey);
+      if (!saved) continue;
+      const snapshot = parseResumeSnapshot(saved);
+      if (snapshot) return snapshot;
+    }
+
+    return null;
+  };
+
+  const saveWatchProgressPercent = (time: number, total: number) => {
+    if (!anime?.id || !Number.isFinite(total) || total <= 0) return;
+
+    try {
+      const progressPercent = Math.floor((time / total) * 100);
+      const historyData = JSON.parse(localStorage.getItem('ah_watch_progress') || '{}');
+      historyData[`${anime.id}_${currentEp}`] = progressPercent;
+      localStorage.setItem('ah_watch_progress', JSON.stringify(historyData));
+    } catch {
+      localStorage.setItem('ah_watch_progress', JSON.stringify({ [`${anime.id}_${currentEp}`]: Math.floor((time / total) * 100) }));
+    }
+  };
+
+  const clearResumeProgress = (completed = false) => {
+    if (typeof window === 'undefined') return;
+
+    const key = getResumeKey();
+    if (key) localStorage.removeItem(key);
+    localStorage.removeItem(`ah_time_${id}_${currentEp}`);
+    if (anime?.id) localStorage.removeItem(`ah_time_${anime.id}_${currentEp}`);
+
+    if (completed && anime?.id) {
+      const historyData = JSON.parse(localStorage.getItem('ah_watch_progress') || '{}');
+      historyData[`${anime.id}_${currentEp}`] = 100;
+      localStorage.setItem('ah_watch_progress', JSON.stringify(historyData));
+      window.dispatchEvent(new CustomEvent('ah-history-update'));
+    }
+  };
+
+  const saveResumeProgress = (reason: ResumeSnapshot['reason'] = 'interval') => {
+    if (typeof window === 'undefined' || !anime?.id || !videoRef.current) return;
+
+    const video = videoRef.current;
+    const time = video.currentTime;
+    const total = video.duration;
+
+    if (!Number.isFinite(time) || time < 5) return;
+
+    if (Number.isFinite(total) && total > 0) {
+      saveWatchProgressPercent(time, total);
+
+      if (time >= total * 0.95 || total - time < 30) {
+        clearResumeProgress(true);
+        return;
+      }
+    }
+
+    const key = getResumeKey();
+    if (!key) return;
+
+    const sourceMeta = getActiveSourceMeta();
+    const snapshot: ResumeSnapshot = {
+      time,
+      duration: Number.isFinite(total) && total > 0 ? total : undefined,
+      animeId: anime.id,
+      episode: currentEp,
+      source: sourceMeta.source,
+      server: sourceMeta.server,
+      src: sourceMeta.src,
+      updatedAt: Date.now(),
+      reason,
+    };
+
+    localStorage.setItem(key, JSON.stringify(snapshot));
+    window.dispatchEvent(new CustomEvent('ah-history-update'));
+  };
+
+  // Close menus on click outside
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setShowSpeedMenu(false);
+      setShowQualityMenu(false);
+      setShowMainServerMenu(false);
+    };
+    if (showSpeedMenu || showQualityMenu || showMainServerMenu) {
+      window.addEventListener('click', handleGlobalClick);
+    }
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, [showSpeedMenu, showQualityMenu, showMainServerMenu]);
 
   // Persist server & version preferences
   useEffect(() => { localStorage.setItem('ah_server', server); }, [server]);
   useEffect(() => { localStorage.setItem('ah_version', version); }, [version]);
   useEffect(() => { localStorage.setItem('ah_autoplay', String(autoPlayEnabled)); }, [autoPlayEnabled]);
+  useEffect(() => { localStorage.setItem('ah_autoskip', String(autoSkipEnabled)); }, [autoSkipEnabled]);
+  useEffect(() => { localStorage.setItem('ah_ambient', String(isAmbientMode)); }, [isAmbientMode]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !resolvedUrl || !isNativeType) return;
+
+    if (!isHlsSource(resolvedUrl)) return;
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = resolvedUrl;
+      return;
+    }
+
+    if (!Hls.isSupported()) return;
+
+    const hls = new Hls();
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) {
+        console.warn('HLS_FATAL_ERROR:', data.type, data.details);
+        videoFailureRef.current?.();
+      }
+    });
+    hls.loadSource(resolvedUrl);
+    hls.attachMedia(video);
+
+    return () => hls.destroy();
+  }, [resolvedUrl, isNativeType]);
 
   useEffect(() => {
     async function loadData() {
@@ -102,8 +396,8 @@ export default function PlayerPage() {
     async function fetchSyncInfo(force = false) {
       try {
         const token = localStorage.getItem('anilist_token');
-        if (token && id) {
-          const data = await AniListAPI.getMediaListStatus(Number(id), token, force);
+        if (token && anime?.id) {
+          const data = await AniListAPI.getMediaListStatus(Number(anime.id), token, force);
           if (data?.MediaList) {
             setUserAniListInfo(data.MediaList);
             // Se o usuário já assistiu este EP, marcamos como sincronizado para não chamar de novo
@@ -122,20 +416,84 @@ export default function PlayerPage() {
     };
     window.addEventListener('anilist-sync', handleGlobalSync);
     return () => window.removeEventListener('anilist-sync', handleGlobalSync);
-  }, [id, currentEp]);
+  }, [id, currentEp, anime?.id]);
+
+  const getAniListStatusForProgress = (episodeProgress: number) => {
+    const totalEpisodes = Number(anime?.episodesReleased) || Number(anime?.episodes) || 0;
+    if (totalEpisodes > 0 && episodeProgress >= totalEpisodes) return 'COMPLETED';
+    if (userAniListInfo?.status === 'COMPLETED') return 'REPEATING';
+    if (userAniListInfo?.progress > 0 && currentEp < userAniListInfo.progress) return 'REPEATING';
+    return userAniListInfo?.status === 'REPEATING' ? 'REPEATING' : 'CURRENT';
+  };
+
+  const syncAniListProgress = async (episodeProgress: number, showToast = false) => {
+    const token = localStorage.getItem('anilist_token');
+    if (!token || !anime?.id) return;
+
+    const nextProgress = Math.max(Number(userAniListInfo?.progress || 0), episodeProgress);
+    const nextStatus = getAniListStatusForProgress(nextProgress);
+    const data = await AniListAPI.saveMediaListEntry(
+      Number(anime.id),
+      nextStatus,
+      nextProgress,
+      token,
+      undefined,
+      userAniListInfo?.id
+    );
+
+    if (data?.SaveMediaListEntry) {
+      setUserAniListInfo(data.SaveMediaListEntry);
+      if (showToast) {
+        setShowSyncToast(true);
+        setTimeout(() => setShowSyncToast(false), 3000);
+      }
+      window.dispatchEvent(new CustomEvent('anilist-sync'));
+    }
+  };
 
   // ═══ ANILIST SYNC LOGIC ═══
   useEffect(() => {
     // 1. Sincronização de Status (Assim que começa a assistir)
-    if (isPlaying && progress > 1 && !hasSynced) {
+    if (!anime?.id || !isPlaying) return;
+
+    if (progress > 1) {
+      const statusKey = `${anime.id}-${currentEp}-${userAniListInfo?.status || 'new'}`;
+      if (lastAniListStatusSyncRef.current !== statusKey) {
+        lastAniListStatusSyncRef.current = statusKey;
+        syncAniListProgress(Math.max(Number(userAniListInfo?.progress || 0), currentEp - 1)).catch(() => {});
+      }
+    }
+
+    const aniSyncThreshold = Math.min(1200, (videoRef.current?.duration || 0) * 0.85);
+    if (progress > 85 && videoRef.current && videoRef.current.currentTime >= aniSyncThreshold) {
+      const progressKey = `${anime.id}-${currentEp}`;
+      if (lastAniListProgressSyncRef.current !== progressKey) {
+        lastAniListProgressSyncRef.current = progressKey;
+        setHasSynced(true);
+        syncAniListProgress(currentEp, true).catch(() => {});
+      }
+    }
+
+    return;
+
+    if (isPlaying && progress > 1 && !hasSynced && anime?.id) {
       const token = localStorage.getItem('anilist_token');
-      if (token) {
-        const currentStatus = userAniListInfo?.status === 'REPEATING' ? 'REPEATING' : 'CURRENT';
+      if (token && userAniListInfo) { // Só sincroniza se já tivermos as info do usuário carregadas
+        let currentStatus = userAniListInfo.status;
         
-        // Se não temos info ou o status não é o correto
-        if (!userAniListInfo || (userAniListInfo.status !== 'CURRENT' && userAniListInfo.status !== 'REPEATING')) {
-          console.log('🔄 Sincronizando Status Inicial...');
-          AniListAPI.saveMediaListEntry(Number(id), currentStatus, userAniListInfo?.progress || 0, token)
+        // Se o anime já foi concluído ou o usuário está vendo um EP anterior ao seu progresso máximo,
+        // ele deve entrar em modo REPEATING (Reassistindo)
+        if (currentStatus === 'COMPLETED' || (userAniListInfo.progress > 0 && currentEp < userAniListInfo.progress)) {
+          currentStatus = 'REPEATING';
+        } else if (currentStatus !== 'REPEATING') {
+          currentStatus = 'CURRENT';
+        }
+        
+        // Só faz o update se o status no AniList for diferente do que detectamos ou se for um status "inativo" (PLANNING, PAUSED, etc)
+        const isInactive = ['PLANNING', 'PAUSED', 'DROPPED'].includes(userAniListInfo.status);
+        if (isInactive || userAniListInfo.status !== currentStatus) {
+          console.log('🔄 Sincronizando Status Inicial para:', currentStatus);
+          AniListAPI.saveMediaListEntry(Number(anime!.id), currentStatus, userAniListInfo.progress || 0, token!)
             .then(data => {
               if (data?.SaveMediaListEntry) {
                 setUserAniListInfo(data.SaveMediaListEntry);
@@ -146,8 +504,9 @@ export default function PlayerPage() {
       }
     }
 
-    // 2. Sincronização de Progresso (Ao final do episódio)
-    if (progress > 85 && !hasSynced) {
+    // Sync auto com AniList quando passa de 85% e já assistiu pelo menos 20 minutos (ou 85% para curtas)
+    const syncThreshold = Math.min(1200, (videoRef.current?.duration || 0) * 0.85);
+    if (progress > 85 && !hasSynced && videoRef.current && videoRef.current!.currentTime >= syncThreshold && anime?.id) {
       const token = localStorage.getItem('anilist_token');
       if (token) {
         setHasSynced(true);
@@ -159,10 +518,10 @@ export default function PlayerPage() {
         }
 
         AniListAPI.saveMediaListEntry(
-          Number(id), 
+          Number(anime!.id), 
           newStatus, 
           currentEp, 
-          token
+          token!
         ).then(data => {
           if (data?.SaveMediaListEntry) {
             setUserAniListInfo(data.SaveMediaListEntry);
@@ -174,7 +533,7 @@ export default function PlayerPage() {
         });
       }
     }
-  }, [progress, isPlaying, hasSynced, userAniListInfo, id, currentEp]);
+  }, [progress, isPlaying, hasSynced, userAniListInfo, anime?.id, currentEp]);
 
   useEffect(() => {
     if (anime && id) {
@@ -199,36 +558,149 @@ export default function PlayerPage() {
     };
   }, [resolvedUrl]);
 
-  const startAutoPlay = () => {
-    if (currentEp < (Number(anime?.episodes) || 0)) {
-      setAutoPlayTimer(5);
-    }
+  const getTotalAvailableEpisodes = () => {
+    return Number(anime?.episodesReleased) || Number(anime?.episodes) || 0;
   };
 
-  useEffect(() => {
-    if (autoPlayTimer !== null && autoPlayTimer > 0) {
-      const t = setTimeout(() => setAutoPlayTimer(autoPlayTimer - 1), 1000);
-      return () => clearTimeout(t);
-    } else if (autoPlayTimer === 0) {
-      changeEpisode(currentEp + 1);
-    }
-  }, [autoPlayTimer, router, id, currentEp]);
+  const hasNextEpisode = () => {
+    const total = getTotalAvailableEpisodes();
+    return total === 0 || currentEp < total;
+  };
 
-  const slugify = (title: string) => {
-    return title
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .toLowerCase()
-      .trim();
+  const goToNextEpisode = () => {
+    if (!hasNextEpisode()) return;
+    shouldAutoStartRef.current = true;
+    setAutoPlayTimer(null);
+    changeEpisode(currentEp + 1);
+  };
+
+  const startAutoPlay = () => {
+    goToNextEpisode();
+  };
+
+  // 🕒 RESUME PLAYBACK & PROGRESS TRACKING LOGIC
+  // Save progress periodically
+  useEffect(() => {
+    if (!videoRef.current || !isPlaying || !anime?.id) return;
+
+    const interval = setInterval(() => {
+      saveResumeProgress('interval');
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, anime?.id, currentEp, server, resolvedUrl, aiPlayers]);
+
+  useEffect(() => {
+    if (!anime?.id) return;
+
+    const saveOnPageExit = () => saveResumeProgress('pagehide');
+    const saveOnVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveResumeProgress('visibilitychange');
+      }
+    };
+
+    window.addEventListener('beforeunload', saveOnPageExit);
+    window.addEventListener('pagehide', saveOnPageExit);
+    document.addEventListener('visibilitychange', saveOnVisibilityChange);
+
+    return () => {
+      saveResumeProgress('unmount');
+      window.removeEventListener('beforeunload', saveOnPageExit);
+      window.removeEventListener('pagehide', saveOnPageExit);
+      document.removeEventListener('visibilitychange', saveOnVisibilityChange);
+    };
+  }, [anime?.id, currentEp, server, resolvedUrl, aiPlayers]);
+
+  // Check for resume time when episode starts
+  useEffect(() => {
+    hasCheckedResume.current = false;
+    setShowResumePrompt(false);
+    setResumeTime(null);
+  }, [currentEp, anime?.id]);
+
+  const handleVideoMetadata = () => {
+    if (hasCheckedResume.current || !anime?.id) return;
+    
+    const savedResume = readResumeSnapshot();
+    if (savedResume) {
+      const savedTime = savedResume.time;
+      const duration = videoRef.current?.duration || savedResume.duration || 0;
+      
+      // Só oferece resume se tiver mais de 10s e menos de 95% do total
+      if (savedTime > 10 && (duration === 0 || savedTime < duration * 0.95)) {
+        setResumeTime(savedTime);
+        setShowResumePrompt(true);
+        setTimeout(() => setShowResumePrompt(false), 8000); // Esconde após 8s
+      }
+    }
+    hasCheckedResume.current = true;
+  };
+
+  const handleResume = () => {
+    if (videoRef.current && resumeTime) {
+      videoRef.current.currentTime = resumeTime;
+      videoRef.current.play();
+      setShowResumePrompt(false);
+      showHUD('fa-clock-rotate-left', 'Retomado');
+    }
   };
 
   const [attemptUrls, setAttemptUrls] = useState<string[]>([]);
   const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
 
+  const getPreferredResolvedSource = () => {
+    if (typeof window === 'undefined' || !anime?.id) return null;
+    try {
+      const memory = JSON.parse(localStorage.getItem('ah_resolver_memory') || '{}') as Record<string, ResolverMemoryItem>;
+      return memory[String(anime.id)]?.source || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getPreferredResolvedPlayer = (): ResolverMemoryItem | null => {
+    if (typeof window === 'undefined' || !anime?.id) return null;
+    try {
+      const memory = JSON.parse(localStorage.getItem('ah_resolver_memory') || '{}') as Record<string, ResolverMemoryItem>;
+      const cached = memory[String(anime.id)];
+      if (!cached?.src) return null;
+      if (cached.version && cached.version !== version) return null;
+      if (cached.episode && cached.episode !== currentEp) return null;
+      if (Date.now() - cached.updatedAt > 7 * 24 * 60 * 60 * 1000) return null;
+      return cached;
+    } catch {
+      return null;
+    }
+  };
+
+  const rememberResolvedSource = () => {
+    if (typeof window === 'undefined' || !anime?.id || !resolvedUrl) return;
+    const selectedAiIndex = server.startsWith('ai_') ? parseInt(server.replace('ai_', '')) : -1;
+    const selectedPlayer = selectedAiIndex >= 0 ? aiPlayers[selectedAiIndex] : null;
+    const source = selectedPlayer?.source || server;
+    const type = selectedPlayer?.type || (isHlsSource(resolvedUrl) ? 'm3u8' : isNativeType ? 'mp4' : 'iframe');
+
+    try {
+      const memory = JSON.parse(localStorage.getItem('ah_resolver_memory') || '{}') as Record<string, ResolverMemoryItem>;
+      const previous = memory[String(anime.id)];
+      memory[String(anime.id)] = {
+        source,
+        src: resolvedUrl,
+        type,
+        quality: selectedPlayer?.quality,
+        version,
+        episode: currentEp,
+        confidence: selectedPlayer?.confidence,
+        successCount: (previous?.src === resolvedUrl ? previous.successCount || 0 : 0) + 1,
+        updatedAt: Date.now(),
+      };
+      localStorage.setItem('ah_resolver_memory', JSON.stringify(memory));
+    } catch { }
+  };
+
   const handleVersionChange = (newVersion: 'sub' | 'dub') => {
+    saveResumeProgress('version-change');
     setVersion(newVersion);
     if (server.startsWith('ai_')) {
       setServer('busca_ia');
@@ -242,7 +714,89 @@ export default function PlayerPage() {
       setResolving(true);
       
       try {
-        if (server === 'direct') {
+        if (server === 'ao_to') {
+          const cachedPlayer = getPreferredResolvedPlayer();
+          if (cachedPlayer) {
+            setAiPlayers([{
+              name: cachedPlayer.source,
+              src: cachedPlayer.src,
+              type: cachedPlayer.type,
+              quality: cachedPlayer.quality,
+              source: cachedPlayer.source,
+              confidence: cachedPlayer.confidence,
+            }]);
+            setAttemptUrls([cachedPlayer.src]);
+            setCurrentUrlIndex(0);
+            setResolvedUrl(cachedPlayer.src);
+            setIsNativeType(cachedPlayer.type === 'm3u8' || cachedPlayer.type === 'mp4');
+            setResolving(false);
+            return;
+          }
+
+          try {
+            const preferredPlayer = getPreferredResolvedPlayer();
+            const res = await fetch('/api/resolver/episode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                aniListId: anime.id,
+                malId: anime.malId,
+                tmdbId,
+                title: anime.title,
+                titleEnglish: anime.titleEnglish,
+                titleRomaji: anime.titleRomaji,
+                titleNative: anime.titleNative,
+                year: anime.year,
+                totalEpisodes: anime.episodes,
+                episode: currentEp,
+                version,
+                preferredSource: getPreferredResolvedSource(),
+                preferredSrc: preferredPlayer?.src,
+              })
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data.players) && data.players.length > 0) {
+                setAiPlayers(data.players);
+                setAttemptUrls(data.players.map((player: ResolvedPlayer) => player.src).filter(Boolean));
+                setCurrentUrlIndex(0);
+                setResolvedUrl(data.players[0].src);
+                setIsNativeType(data.players[0].type === 'm3u8' || data.players[0].type === 'mp4');
+                setResolving(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error("EPISODE_RESOLVER_FAILED:", error);
+          }
+
+          setServer('direct');
+          return;
+        } else if (server === 'direct') {
+          // Use o novo scraper de alta performance por padrão
+          try {
+            const res = await fetch('/api/scraper/animesonlineto', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: anime.title, episode: currentEp, version })
+            });
+            
+            if (res.ok) {
+              const data = await res.json();
+              if (data.players && data.players.length > 0) {
+                setAiPlayers(data.players);
+                setResolvedUrl(data.players[0].src);
+                setIsNativeType(data.players[0].type === 'm3u8' || data.players[0].type === 'mp4');
+                setResolving(false);
+                return; // Sucesso
+              }
+            }
+          } catch (e) {
+            console.error("AO_TO_SCRAPER_FAILED:", e);
+          }
+
+          // Fallback para o Direct antigo se o novo falhar ou se for explicitamente 'direct'
           const titlesToTry = [anime.title];
           if (anime.titleEnglish && anime.titleEnglish !== anime.title) titlesToTry.push(anime.titleEnglish);
           if (anime.titleRomaji && anime.titleRomaji !== anime.title) titlesToTry.push(anime.titleRomaji);
@@ -268,6 +822,27 @@ export default function PlayerPage() {
           setCurrentUrlIndex(0);
           setResolvedUrl(url);
           setIsNativeType(false);
+        } else if (server === 'warez') {
+          const url = tmdbId ? `https://warezcdn.site/serie/${tmdbId}/1/${currentEp}` : null;
+          setAttemptUrls(url ? [url] : []);
+          setCurrentUrlIndex(0);
+          setResolvedUrl(url);
+          setIsNativeType(false);
+        } else if (server === 'anivideo') {
+          const titlesToTry = [anime.title];
+          if (anime.titleEnglish && anime.titleEnglish !== anime.title) titlesToTry.push(anime.titleEnglish);
+          if (anime.titleRomaji && anime.titleRomaji !== anime.title) titlesToTry.push(anime.titleRomaji);
+
+          const urls = Array.from(new Set(
+            titlesToTry
+              .flatMap((title) => anivideoMp4Variants(title, currentEp))
+              .map(anivideoUrl)
+          ));
+
+          setAttemptUrls(urls);
+          setCurrentUrlIndex(0);
+          setResolvedUrl(urls[0] || null);
+          setIsNativeType(true);
         } else if (server === 'anroll') {
           const results = await AnrollAPI.search(anime.title);
           const bestMatch = results[0];
@@ -310,35 +885,75 @@ export default function PlayerPage() {
           setResolvedUrl(urls[0]);
           setIsNativeType(true);
         } else if (server === 'pixel') {
-          const urls: string[] = [];
           const titlesToTry = [anime.title];
           if (anime.titleEnglish && anime.titleEnglish !== anime.title) titlesToTry.push(anime.titleEnglish);
           if (anime.titleRomaji && anime.titleRomaji !== anime.title) titlesToTry.push(anime.titleRomaji);
 
           const epStr = currentEp.toString().padStart(2, '0');
+          const heuristicUrls: string[] = [];
 
           for (const title of titlesToTry) {
-            const slug = slugify(title);
-            const firstLetter = slug.charAt(0);
             const preferred = version === 'dub' ? 'dublado' : 'legendado';
-            const fallback  = version === 'dub' ? 'legendado' : 'dublado';
-            // Try preferred version first, then fallback, then no suffix
-            urls.push(`https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}-${preferred}/${epStr}.mp4`);
-            urls.push(`https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}-${fallback}/${epStr}.mp4`);
-            urls.push(`https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}/${epStr}.mp4`);
+            const fallback = version === 'dub' ? 'legendado' : 'dublado';
+
+            for (const slug of pixelSlugVariants(title)) {
+              const firstLetter = slug.charAt(0);
+              heuristicUrls.push(`https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}-${preferred}/${epStr}.mp4`);
+              heuristicUrls.push(`https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}-${fallback}/${epStr}.mp4`);
+              heuristicUrls.push(`https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}/${epStr}.mp4`);
+            }
           }
 
-          setAttemptUrls(urls);
-          setCurrentUrlIndex(0);
-          setResolvedUrl(urls[0]);
-          setIsNativeType(true);
-        } else if (server === 'busca_ia') {
-          setIsAiSearching(true);
+          let urls = Array.from(new Set(heuristicUrls));
           try {
             const res = await fetch('/api/scraper/animeplay', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title: anime.title, episode: currentEp, version })
+              body: JSON.stringify({
+                title: anime.title,
+                episode: currentEp,
+                version,
+                preferredSource: 'sushianimes.com.br'
+              })
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data.players) && data.players.length > 0) {
+                const apiUrls = data.players.map((player: { src: string }) => player.src).filter(Boolean);
+                urls = Array.from(new Set([...apiUrls, ...heuristicUrls]));
+              }
+            }
+          } catch (error) {
+            console.warn('PIXEL_SOURCE_LOOKUP_FAILED:', error);
+          }
+
+          setAttemptUrls(urls);
+          setCurrentUrlIndex(0);
+          setResolvedUrl(urls[0] || null);
+          setIsNativeType(true);
+        } else if (server === 'busca_ia') {
+          setIsAiSearching(true);
+          try {
+            const preferredPlayer = getPreferredResolvedPlayer();
+            const res = await fetch('/api/resolver/episode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                aniListId: anime.id,
+                malId: anime.malId,
+                tmdbId,
+                title: anime.title,
+                titleEnglish: anime.titleEnglish,
+                titleRomaji: anime.titleRomaji,
+                titleNative: anime.titleNative,
+                year: anime.year,
+                totalEpisodes: anime.episodes,
+                episode: currentEp,
+                version,
+                preferredSource: getPreferredResolvedSource(),
+                preferredSrc: preferredPlayer?.src,
+              })
             });
             
             if (!res.ok) {
@@ -392,54 +1007,84 @@ export default function PlayerPage() {
     resolvePlayer();
   }, [anime, server, version, currentEp, tmdbId, id]);
 
-  // Fetch AniSkip times
-  useEffect(() => {
-    async function fetchSkipTimes() {
-      if (!anime?.malId || !currentEp) return;
-      try {
-        const res = await fetch(`https://api.aniskip.com/v2/skip-times/${anime.malId}/${currentEp}?types=op&types=ed&types=recap&episodeLength=0`);
-        if (!res.ok) { setSkipTimes({}); return; }
-        const data = await res.json();
-        if (data.found && data.results) {
-          const times: any = {};
-          data.results.forEach((r: any) => {
-            if (r.skipType === 'op') times.op = { start: r.interval.startTime, end: r.interval.endTime };
-            if (r.skipType === 'ed') times.ed = { start: r.interval.startTime, end: r.interval.endTime };
-            if (r.skipType === 'recap') times.recap = { start: r.interval.startTime, end: r.interval.endTime };
-          });
-          setSkipTimes(times);
-        } else {
-          setSkipTimes({});
-        }
-      } catch {
+  const fetchSkipTimes = async (episodeLength = 0) => {
+    if (!anime?.malId || !currentEp) return;
+
+    const requestedEpisode = currentEp;
+    const requestedMalId = anime.malId;
+
+    try {
+      const res = await fetch(`https://api.aniskip.com/v2/skip-times/${requestedMalId}/${requestedEpisode}?types=op&types=ed&types=recap&episodeLength=${episodeLength}`);
+      if (!res.ok) { setSkipTimes({}); return; }
+      const data = await res.json();
+
+      if (requestedEpisode !== currentEp || requestedMalId !== anime?.malId) return;
+
+      if (data.found && data.results) {
+        const times: { op?: {start: number, end: number}, ed?: {start: number, end: number}, recap?: {start: number, end: number} } = {};
+        data.results.forEach((r: { skipType: 'op' | 'ed' | 'recap'; interval: { startTime: number; endTime: number } }) => {
+          if (r.skipType === 'op') times.op = { start: r.interval.startTime, end: r.interval.endTime };
+          if (r.skipType === 'ed') times.ed = { start: r.interval.startTime, end: r.interval.endTime };
+          if (r.skipType === 'recap') times.recap = { start: r.interval.startTime, end: r.interval.endTime };
+        });
+        setSkipTimes(times);
+      } else {
         setSkipTimes({});
       }
+    } catch {
+      setSkipTimes({});
     }
-    fetchSkipTimes();
-  }, [anime, currentEp]);
+  };
+
+  // Fetch AniSkip times
+  useEffect(() => {
+    skippedSegmentsRef.current.clear();
+    const timer = setTimeout(() => fetchSkipTimes(), 0);
+    return () => clearTimeout(timer);
+  }, [anime?.malId, currentEp]);
 
   const handleVideoError = () => {
+    saveResumeProgress('error');
+
     if (currentUrlIndex < attemptUrls.length - 1) {
       const nextIndex = currentUrlIndex + 1;
       console.log(`🔄 Tentando fonte alternativa (${nextIndex + 1}/${attemptUrls.length})...`);
       setCurrentUrlIndex(nextIndex);
       setResolvedUrl(attemptUrls[nextIndex]);
     } else {
-      console.error(`VIDEO_LOAD_ERROR: Todas as fontes falharam para o servidor ${server}.`);
-      
       // Fallback em cascata (Waterfall)
-      const fallbackChain = ['direct', 'feral', 'pixel', 'betterflix', 'anroll'];
+      const fallbackChain = ['ao_to', 'direct', 'feral', 'pixel', 'anivideo', 'warez', 'betterflix', 'anroll'];
       const currentIndex = fallbackChain.indexOf(server);
       
       if (currentIndex !== -1 && currentIndex < fallbackChain.length - 1) {
         const nextServer = fallbackChain[currentIndex + 1];
+        console.warn(`VIDEO_LOAD_WARN: Todas as fontes falharam para o servidor ${server}. Alternando para ${nextServer}.`);
         console.log(`🔄 Alternando automaticamente para o servidor: ${nextServer.toUpperCase()}`);
         setServer(nextServer);
       } else {
+        console.error(`VIDEO_LOAD_ERROR: Todas as fontes falharam para o servidor ${server}.`);
         console.error('Nenhum servidor disponível funcionou.');
         setResolvedUrl(null);
       }
     }
+  };
+
+  useEffect(() => {
+    videoFailureRef.current = handleVideoError;
+  });
+
+  const checkVideoDecode = (video: HTMLVideoElement) => {
+    window.setTimeout(() => {
+      if (videoRef.current !== video) return;
+      if (video.readyState >= 2 && video.videoWidth === 0 && video.videoHeight === 0) {
+        console.warn('VIDEO_DECODE_WARN: audio carregou, mas o vídeo não renderizou. Alternando fonte.');
+        handleVideoError();
+        return;
+      }
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        rememberResolvedSource();
+      }
+    }, 1200);
   };
 
   useEffect(() => {
@@ -491,12 +1136,41 @@ export default function PlayerPage() {
     }
   };
 
-  // Keyboard Shortcuts
-  // Refs for keyboard shortcuts to avoid dependency array issues and excessive re-renders
-  const volumeRef = useRef(volume);
-  const isMutedRef = useRef(isMuted);
-  useEffect(() => { volumeRef.current = volume; }, [volume]);
-  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  // Ambient Mode (Ambilight) Logic
+  useEffect(() => {
+    if (!isAmbientMode || !isPlaying || !isNativeType) return;
+
+    const video = videoRef.current;
+    const canvas = ambientCanvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let animationId: number;
+
+    const updateAmbient = () => {
+      if (!video || video.paused || video.ended) return;
+      
+      // Draw a small version of the video to the canvas for performance
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      animationId = requestAnimationFrame(updateAmbient);
+    };
+
+    animationId = requestAnimationFrame(updateAmbient);
+    return () => cancelAnimationFrame(animationId);
+  }, [isAmbientMode, isPlaying, isNativeType, resolvedUrl]);
+
+  // Keyboard Shortcuts & HUD Feedback
+  const [hudAction, setHudAction] = useState<{ icon: string; text: string } | null>(null);
+  const hudTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showHUD = (icon: string, text: string) => {
+    setHudAction({ icon, text });
+    if (hudTimeoutRef.current) clearTimeout(hudTimeoutRef.current);
+    hudTimeoutRef.current = setTimeout(() => setHudAction(null), 800);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -514,28 +1188,51 @@ export default function PlayerPage() {
         case 'k':
           e.preventDefault();
           togglePlay();
+          showHUD(video.paused ? 'fa-pause' : 'fa-play', video.paused ? 'Pausa' : 'Play');
           break;
         case 'f':
           e.preventDefault();
           toggleFullscreen();
+          showHUD('fa-expand', 'Tela Cheia');
           break;
         case 'p':
-          e.preventDefault();
-          togglePiP();
+          // Se for Shift+P ou B, fazemos 'Previous'
+          if (e.shiftKey || e.key === 'b' || e.key === 'B') {
+            if (currentEp > 1) changeEpisode(currentEp - 1);
+          } else {
+            e.preventDefault();
+            togglePiP();
+            showHUD('fa-clone', 'Mini Player');
+          }
+          break;
+        case 'n':
+          if (hasNextEpisode()) {
+            goToNextEpisode();
+            showHUD('fa-forward-step', 'Próximo EP');
+          }
+          break;
+        case 'b':
+          if (currentEp > 1) {
+            changeEpisode(currentEp - 1);
+            showHUD('fa-backward-step', 'EP Anterior');
+          }
           break;
         case 'm':
           e.preventDefault();
           toggleMute();
+          showHUD(!isMuted ? 'fa-volume-xmark' : 'fa-volume-high', !isMuted ? 'Mudo' : 'Som');
           break;
         case 'arrowright':
         case 'l':
           e.preventDefault();
           video.currentTime += 10;
+          showHUD('fa-forward', '+10s');
           break;
         case 'arrowleft':
         case 'j':
           e.preventDefault();
           video.currentTime -= 10;
+          showHUD('fa-backward', '-10s');
           break;
         case 'arrowup':
           e.preventDefault();
@@ -543,6 +1240,7 @@ export default function PlayerPage() {
           video.volume = newVolUp;
           setVolume(newVolUp);
           setIsMuted(newVolUp === 0);
+          showHUD('fa-volume-high', `${Math.round(newVolUp * 100)}%`);
           break;
         case 'arrowdown':
           e.preventDefault();
@@ -550,13 +1248,18 @@ export default function PlayerPage() {
           video.volume = newVolDown;
           setVolume(newVolDown);
           setIsMuted(newVolDown === 0);
+          showHUD(newVolDown === 0 ? 'fa-volume-xmark' : 'fa-volume-low', `${Math.round(newVolDown * 100)}%`);
+          break;
+        case 'c':
+          setCinemaMode(!cinemaMode);
+          showHUD('fa-film', cinemaMode ? 'Modo Normal' : 'Modo Cinema');
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []); // Stable dependency array
+  }, [anime, currentEp, isMuted, cinemaMode]);
 
 
 
@@ -575,12 +1278,26 @@ export default function PlayerPage() {
       setCurrentTime(formatTime(current));
       setDuration(formatTime(total));
 
+      const skipEntry = (['recap', 'op', 'ed'] as const).find((type) => {
+        const segment = skipTimes[type];
+        return segment && current >= segment.start && current <= segment.end + 2;
+      }) || null;
+
+      if (skipEntry && autoSkipEnabled && skipTimes[skipEntry]) {
+        const key = `${currentEp}-${skipEntry}`;
+        if (!skippedSegmentsRef.current.has(key)) {
+          skippedSegmentsRef.current.add(key);
+          videoRef.current.currentTime = skipTimes[skipEntry]!.end;
+          showHUD('fa-forward-step', skipEntry === 'op' ? 'Abertura pulada' : skipEntry === 'ed' ? 'Ending pulado' : 'Recap pulado');
+        }
+      }
+
       // Check skip times (with 2 seconds tolerance to ensure the button is visible)
-      if (skipTimes.op && current >= skipTimes.op.start && current <= skipTimes.op.end + 2) {
+      if (!autoSkipEnabled && skipTimes.op && current >= skipTimes.op.start && current <= skipTimes.op.end + 2) {
         setActiveSkip('op');
-      } else if (skipTimes.ed && current >= skipTimes.ed.start && current <= skipTimes.ed.end + 2) {
+      } else if (!autoSkipEnabled && skipTimes.ed && current >= skipTimes.ed.start && current <= skipTimes.ed.end + 2) {
         setActiveSkip('ed');
-      } else if (skipTimes.recap && current >= skipTimes.recap.start && current <= skipTimes.recap.end + 2) {
+      } else if (!autoSkipEnabled && skipTimes.recap && current >= skipTimes.recap.start && current <= skipTimes.recap.end + 2) {
         setActiveSkip('recap');
       } else {
         setActiveSkip(null);
@@ -588,7 +1305,7 @@ export default function PlayerPage() {
 
       // Save watch progress to localStorage (if video is more than 5 seconds in and not at the very end)
       if (current > 5) {
-        if (total - current < 5) {
+        if (total - current < 30) {
           localStorage.removeItem(`ah_time_${id}_${currentEp}`);
         } else {
           localStorage.setItem(`ah_time_${id}_${currentEp}`, current.toString());
@@ -599,12 +1316,10 @@ export default function PlayerPage() {
 
   // Autoplay Logic
   const handleVideoEnded = () => {
-    if (!autoPlayEnabled) return;
-    
-    const totalEps = anime?.episodesReleased || anime?.episodes || 0;
-    if (typeof totalEps === 'number' && currentEp < totalEps) {
-      setAutoPlayTimer(5);
-    } else if (typeof totalEps === 'string' && currentEp < parseInt(totalEps)) {
+    clearResumeProgress(true);
+    syncAniListProgress(currentEp, true).catch(() => {});
+
+    if (autoPlayEnabled && hasNextEpisode()) {
       setAutoPlayTimer(5);
     }
   };
@@ -613,9 +1328,8 @@ export default function PlayerPage() {
     if (autoPlayTimer === null) return;
     
     if (autoPlayTimer <= 0) {
-      setAutoPlayTimer(null);
-      changeEpisode(currentEp + 1);
-      return;
+      const timer = setTimeout(() => goToNextEpisode(), 0);
+      return () => clearTimeout(timer);
     }
     
     const interval = setInterval(() => {
@@ -743,6 +1457,17 @@ export default function PlayerPage() {
               onMouseLeave={() => isPlaying && setShowControls(false)}
               className={`relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 transition-all duration-700 shadow-2xl group ${cinemaMode ? 'scale-[1.02] ring-4 ring-blue-600/20' : ''}`}
             >
+              {/* Ambient Glow Canvas */}
+              {isAmbientMode && isNativeType && (
+                <div className="absolute inset-0 pointer-events-none z-0">
+                  <canvas 
+                    ref={ambientCanvasRef}
+                    width={32}
+                    height={18}
+                    className="absolute inset-0 w-full h-full scale-125 blur-[60px] opacity-60 transition-opacity duration-1000"
+                  />
+                </div>
+              )}
               {(resolving || isAiSearching) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md z-20 animate-in fade-in duration-300">
                   <div className="relative">
@@ -762,7 +1487,7 @@ export default function PlayerPage() {
                     <video 
                       ref={videoRef}
                       key={`${resolvedUrl}-${version}`}
-                      src={resolvedUrl} 
+                      src={isHlsSource(resolvedUrl) ? undefined : resolvedUrl}
                       className="w-full h-full object-contain"
                       poster={anime.banner || anime.poster}
                       onTimeUpdate={handleTimeUpdate}
@@ -770,19 +1495,21 @@ export default function PlayerPage() {
                         e.currentTarget.volume = volume;
                         e.currentTarget.muted = isMuted;
                         e.currentTarget.playbackRate = playbackSpeed;
-                        
-                        // Resume from saved time
-                        const savedTime = localStorage.getItem(`ah_time_${id}_${currentEp}`);
-                        if (savedTime) {
-                          const time = parseFloat(savedTime);
-                          // Only resume if it's less than the duration
-                          if (time > 0 && time < e.currentTarget.duration - 5) {
-                            e.currentTarget.currentTime = time;
-                          }
+                        fetchSkipTimes(Math.round(e.currentTarget.duration || 0));
+                        handleVideoMetadata();
+                        checkVideoDecode(e.currentTarget);
+                        if (shouldAutoStartRef.current) {
+                          shouldAutoStartRef.current = false;
+                          e.currentTarget.play().catch(() => {});
                         }
                       }}
+                      onLoadedData={(e) => checkVideoDecode(e.currentTarget)}
+                      onCanPlay={(e) => checkVideoDecode(e.currentTarget)}
                       onPlay={() => setIsPlaying(true)}
-                      onPause={() => setIsPlaying(false)}
+                      onPause={() => {
+                        setIsPlaying(false);
+                        saveResumeProgress('pause');
+                      }}
                       onClick={togglePlay}
                       onProgress={handleProgress}
                       onError={handleVideoError}
@@ -826,8 +1553,7 @@ export default function PlayerPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setAutoPlayTimer(null);
-                                changeEpisode(currentEp + 1);
+                                goToNextEpisode();
                               }}
                               className="px-10 py-4 bg-white text-black font-black rounded-full hover:bg-gray-200 transition-colors flex items-center gap-3 shadow-xl hover:scale-105 active:scale-95 text-lg"
                             >
@@ -846,8 +1572,47 @@ export default function PlayerPage() {
                         </div>
                       )}
 
+                      {/* 🕒 Resume Playback Overlay */}
+                      {showResumePrompt && resumeTime && (
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[160] animate-in fade-in slide-in-from-bottom-5 duration-500 pointer-events-auto">
+                          <div className="bg-[#0f172a]/90 backdrop-blur-2xl border border-white/10 p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-5 min-w-[320px]">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
+                              <i className="fa-solid fa-clock-rotate-left text-lg"></i>
+                            </div>
+                            <div className="flex-grow">
+                              <p className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-0.5">Continuar assistindo?</p>
+                              <p className="text-xs font-black text-white tracking-tight uppercase">Retomar em {formatTime(resumeTime)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => setShowResumePrompt(false)}
+                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all flex items-center justify-center"
+                              >
+                                <i className="fa-solid fa-xmark text-[10px]"></i>
+                              </button>
+                              <button 
+                                onClick={handleResume}
+                                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                              >
+                                Retomar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Keyboard Shortcuts HUD */}
+                      {hudAction && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[150]">
+                          <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-8 py-6 flex flex-col items-center justify-center gap-2 animate-in fade-in zoom-in duration-200 shadow-2xl">
+                            <i className={`fa-solid ${hudAction.icon} text-4xl text-blue-400`}></i>
+                            <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">{hudAction.text}</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Center Play/Pause Overlay */}
-                      {!isPlaying && (
+                      {!isPlaying && !hudAction && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <div className="relative">
                             <div className="absolute inset-0 rounded-full bg-white/10 animate-ping scale-150" />
@@ -967,9 +1732,9 @@ export default function PlayerPage() {
                             )}
 
                             {/* Next Episode */}
-                            {currentEp < (Number(anime.episodes) || 9999) && (
+                            {hasNextEpisode() && (
                               <button
-                                onClick={() => changeEpisode(currentEp + 1)}
+                                onClick={goToNextEpisode}
                                 className="flex items-center gap-1 px-2 sm:px-3 h-8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 text-[9px] sm:text-[10px] font-black transition-all active:scale-90 border border-cyan-500/30 flex-shrink-0"
                               >
                                 <span className="hidden sm:inline">EP </span>{currentEp + 1} <i className="fa-solid fa-forward-step text-[10px]"></i>
@@ -977,15 +1742,87 @@ export default function PlayerPage() {
                             )}
 
                             {/* Speed */}
-                            <select
-                              value={playbackSpeed}
-                              onChange={(e) => handleSpeedChange(Number(e.target.value))}
-                              className="block h-8 px-1 sm:px-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 text-[9px] sm:text-[10px] font-black cursor-pointer focus:outline-none transition-all"
-                            >
-                              {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => (
-                                <option key={s} value={s} className="bg-slate-900">{s}x</option>
-                              ))}
-                            </select>
+                            <div className="relative">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); setShowQualityMenu(false); }}
+                                className={`h-9 px-3 rounded-xl border transition-all flex items-center gap-2 ${showSpeedMenu ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/70 hover:text-white'}`}
+                              >
+                                <i className={`fa-solid fa-gauge-simple-high text-[10px] ${showSpeedMenu ? 'text-cyan-400' : 'text-white/30'}`}></i>
+                                <span className="text-[10px] font-black">{playbackSpeed}x</span>
+                              </button>
+                              
+                              {showSpeedMenu && (
+                                <div className="absolute bottom-full mb-2 right-0 bg-[#0f172a]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden min-w-[80px] shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                  <div className="px-3 py-2 border-b border-white/5 text-[8px] font-black text-white/30 uppercase tracking-widest bg-white/5">Velocidade</div>
+                                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => (
+                                    <button
+                                      key={s}
+                                      onClick={() => { handleSpeedChange(s); setShowSpeedMenu(false); }}
+                                      className={`w-full px-4 py-2.5 text-[10px] font-black text-left transition-colors flex items-center justify-between group/item ${playbackSpeed === s ? 'bg-cyan-500 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                                    >
+                                      {s}x
+                                      {playbackSpeed === s && <i className="fa-solid fa-check text-[8px]"></i>}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Quality */}
+                            <div className="relative">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setShowQualityMenu(!showQualityMenu); setShowSpeedMenu(false); }}
+                                className={`h-9 px-3 rounded-xl border transition-all flex items-center gap-2 ${showQualityMenu ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'}`}
+                              >
+                                <i className={`fa-solid fa-video text-[10px] ${showQualityMenu ? 'text-cyan-400' : 'text-cyan-500/40'}`}></i>
+                                <span className="text-[10px] font-black">
+                                  {[
+                                    { id: 'ao_to', quality: '1080p' },
+                                    { id: 'direct', quality: '720p' },
+                                    { id: 'feral', quality: '720p' },
+                                    { id: 'pixel', quality: '4K' },
+                                    { id: 'anivideo', quality: 'HLS' },
+                                    { id: 'warez', quality: 'HD' },
+                                    { id: 'betterflix', quality: '720p' },
+                                    { id: 'anroll', quality: '720p' },
+                                    ...aiPlayers.map((p, i) => ({ id: `ai_${i}`, quality: p.quality?.includes('p') ? p.quality : '720p' }))
+                                  ].find(q => q.id === server)?.quality || '720p'}
+                                </span>
+                              </button>
+                              
+                              {showQualityMenu && (
+                                <div className="absolute bottom-full mb-2 right-0 bg-[#0f172a]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden min-w-[140px] shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                  <div className="px-3 py-2 border-b border-white/5 text-[8px] font-black text-white/30 uppercase tracking-widest bg-white/5">Qualidade</div>
+                                  {[
+                                    { id: 'ao_to', quality: '1080p', label: 'Premium' },
+                                    { id: 'direct', quality: '720p', label: 'Direct' },
+                                    { id: 'feral', quality: '720p', label: 'Feral' },
+                                    { id: 'pixel', quality: '4K', label: 'Ultra' },
+                                    { id: 'anivideo', quality: 'HLS', label: 'AniVideo' },
+                                    { id: 'warez', quality: 'HD', label: 'WarezCDN' },
+                                    { id: 'betterflix', quality: '720p', label: 'Ext' },
+                                    { id: 'anroll', quality: '720p', label: 'Anroll' },
+                                    ...aiPlayers.map((p, i) => ({ id: `ai_${i}`, quality: p.quality?.includes('p') ? p.quality : '720p', label: p.name }))
+                                  ].map(q => (
+                                    <button
+                                      key={q.id}
+                                      onClick={() => {
+                                        saveResumeProgress('server-change');
+                                        setServer(q.id);
+                                        setShowQualityMenu(false);
+                                      }}
+                                      className={`w-full px-4 py-2.5 text-[10px] font-black text-left transition-colors flex items-center justify-between group/item ${server === q.id ? 'bg-cyan-500 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                                    >
+                                      <div className="flex flex-col">
+                                        <span>{q.quality}</span>
+                                        <span className={`text-[7px] uppercase tracking-tighter opacity-50`}>{q.label}</span>
+                                      </div>
+                                      {server === q.id && <i className="fa-solid fa-check text-[8px]"></i>}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
 
                             {/* Cinema Mode */}
                             <button
@@ -994,6 +1831,18 @@ export default function PlayerPage() {
                               title="Modo Cinema"
                             >
                               <i className="fa-solid fa-film"></i>
+                            </button>
+
+                            {/* Ambient Mode Toggle */}
+                            <button
+                              onClick={() => {
+                                setIsAmbientMode(!isAmbientMode);
+                                showHUD(isAmbientMode ? 'fa-eye-slash' : 'fa-eye', isAmbientMode ? 'Glow OFF' : 'Glow ON');
+                              }}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all active:scale-90 text-xs ${isAmbientMode ? 'bg-cyan-500/30 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                              title={isAmbientMode ? "Desativar Modo Ambiente" : "Ativar Modo Ambiente"}
+                            >
+                              <i className="fa-solid fa-wand-magic-sparkles"></i>
                             </button>
 
                             {/* Picture in Picture */}
@@ -1089,45 +1938,92 @@ export default function PlayerPage() {
 
                 {/* Inline Controls */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative group">
-                    <select 
-                      value={server}
-                      onChange={(e) => setServer(e.target.value)}
-                      className="appearance-none bg-[#161f2e] border border-white/5 rounded-xl px-3 md:px-5 py-2.5 md:py-3 pr-8 md:pr-10 text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-widest focus:outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-[#1c2638] w-full min-w-0"
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowMainServerMenu(!showMainServerMenu); }}
+                      className={`h-11 px-5 rounded-2xl border transition-all flex items-center gap-3 min-w-[240px] justify-between group ${showMainServerMenu ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20 hover:bg-white/10'}`}
                     >
-                      {[
-                        { id: 'direct', label: 'SERVIDOR 1 (ANIMEPLAY)', badge: 'HD' },
-                        { id: 'feral', label: 'SERVIDOR 2 (FERAL MP4)', badge: 'HD' },
-                        { id: 'pixel', label: 'SERVIDOR 3 (SUSHI 4K)', badge: '4K' },
-                        { id: 'betterflix', label: 'SERVIDOR 4 (EXTERNO)', badge: 'SD/HD' },
-                        { id: 'anroll', label: 'SERVIDOR 5 (ANROLL)', badge: 'HD' },
-                        { id: 'busca_ia', label: '🤖 BUSCA INTELIGENTE', badge: 'AI' },
-                        // Add dynamically found AI players
-                        ...aiPlayers.map((player, index) => ({
-                           id: `ai_${index}`,
-                           label: `IA - ${player.name.toUpperCase()}`,
-                           badge: player.quality || 'HD'
-                        }))
-                      ].map(srv => (
-                        <option key={srv.id} value={srv.id}>
-                          {srv.label} {srv.badge ? `[${srv.badge}]` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-[8px] text-slate-500 pointer-events-none"></i>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${showMainServerMenu ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300'}`}>
+                          <i className="fa-solid fa-server text-[10px]"></i>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">
+                          {[
+                            { id: 'ao_to', label: 'PREMIUM (TURBO)', badge: 'ULTRA HD' },
+                            { id: 'direct', label: 'SERVIDOR 1 (ANIMEPLAY)', badge: 'HD' },
+                            { id: 'feral', label: 'SERVIDOR 2 (FERAL MP4)', badge: 'HD' },
+                            { id: 'pixel', label: 'SERVIDOR 3 (SUSHI 4K)', badge: '4K' },
+                            { id: 'anivideo', label: 'SERVIDOR 4 (ANIVIDEO HLS)', badge: 'HLS' },
+                            { id: 'warez', label: 'SERVIDOR 5 (WAREZCDN)', badge: 'HD' },
+                            { id: 'betterflix', label: 'SERVIDOR 6 (EXTERNO)', badge: 'SD/HD' },
+                            { id: 'anroll', label: 'SERVIDOR 7 (ANROLL)', badge: 'HD' },
+                            { id: 'busca_ia', label: '🤖 BUSCA INTELIGENTE', badge: 'AI' },
+                            ...aiPlayers.map((p, i) => ({ id: `ai_${i}`, label: `IA - ${p.name.toUpperCase()}`, badge: p.quality || 'HD' }))
+                          ].find(s => s.id === server)?.label || 'Selecionar Servidor'}
+                        </span>
+                      </div>
+                      <i className={`fa-solid fa-chevron-down text-[8px] transition-transform duration-500 ${showMainServerMenu ? 'rotate-180 text-blue-400' : 'text-slate-600'}`}></i>
+                    </button>
+                    
+                    {showMainServerMenu && (
+                      <div className="absolute bottom-full mb-3 left-0 w-full bg-[#0a0f1a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[60] animate-in fade-in slide-in-from-bottom-4 duration-300 py-2">
+                        <div className="px-4 py-2 border-b border-white/5 mb-1">
+                          <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">Escolha o Servidor</p>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                          {[
+                            { id: 'ao_to', label: 'PREMIUM (TURBO)', badge: 'ULTRA HD' },
+                            { id: 'direct', label: 'SERVIDOR 1 (ANIMEPLAY)', badge: 'HD' },
+                            { id: 'feral', label: 'SERVIDOR 2 (FERAL MP4)', badge: 'HD' },
+                            { id: 'pixel', label: 'SERVIDOR 3 (SUSHI 4K)', badge: '4K' },
+                            { id: 'anivideo', label: 'SERVIDOR 4 (ANIVIDEO HLS)', badge: 'HLS' },
+                            { id: 'warez', label: 'SERVIDOR 5 (WAREZCDN)', badge: 'HD' },
+                            { id: 'betterflix', label: 'SERVIDOR 6 (EXTERNO)', badge: 'SD/HD' },
+                            { id: 'anroll', label: 'SERVIDOR 7 (ANROLL)', badge: 'HD' },
+                            { id: 'busca_ia', label: '🤖 BUSCA INTELIGENTE', badge: 'AI' },
+                            ...aiPlayers.map((p, i) => ({ id: `ai_${i}`, label: `IA - ${p.name.toUpperCase()}`, badge: p.quality || 'HD' }))
+                          ].map(srv => (
+                            <button
+                              key={srv.id}
+                              onClick={() => {
+                                saveResumeProgress('server-change');
+                                setServer(srv.id);
+                                setShowMainServerMenu(false);
+                              }}
+                              className={`w-full px-5 py-3.5 text-left transition-all flex items-center justify-between group/item relative ${server === srv.id ? 'bg-blue-500/10 text-blue-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                            >
+                              {server === srv.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>}
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] font-black uppercase tracking-wider">{srv.label}</span>
+                                <span className={`text-[8px] tracking-[0.1em] font-bold uppercase ${server === srv.id ? 'text-blue-500/60' : 'text-slate-600'}`}>{srv.badge}</span>
+                              </div>
+                              {server === srv.id ? (
+                                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                  <i className="fa-solid fa-check text-[8px] text-white"></i>
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border border-white/5 flex items-center justify-center group-hover/item:border-white/20 transition-all">
+                                  <div className="w-1 h-1 rounded-full bg-white/10 group-hover/item:bg-white/40 transition-all"></div>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* LEG/DUB Toggle */}
                   <div className="flex bg-[#161f2e] p-1 rounded-xl border border-white/5">
                     <button
                       onClick={() => handleVersionChange('sub')}
-                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${version === 'sub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${version === 'sub' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       LEG
                     </button>
                     <button
                       onClick={() => handleVersionChange('dub')}
-                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${version === 'dub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${version === 'dub' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       DUB
                     </button>
@@ -1144,7 +2040,7 @@ export default function PlayerPage() {
                     </button>
                     <button
                       onClick={startAutoPlay}
-                      className={`flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase transition-all shadow-lg shadow-blue-600/20 ${currentEp >= (Number(anime.episodes) || 0) ? 'opacity-20 pointer-events-none' : ''}`}
+                      className={`flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase transition-all ${!hasNextEpisode() ? 'opacity-20 pointer-events-none' : ''}`}
                     >
                       Próximo
                       <i className="fa-solid fa-chevron-right text-[8px]"></i>
@@ -1168,6 +2064,13 @@ export default function PlayerPage() {
                 >
                   <i className={`fa-solid fa-forward-step text-xs group-hover:translate-x-0.5 transition-transform ${!autoPlayEnabled && 'opacity-50'}`}></i>
                   Autoplay: {autoPlayEnabled ? 'ON' : 'OFF'}
+                </button>
+                <button
+                  onClick={() => setAutoSkipEnabled(!autoSkipEnabled)}
+                  className={`flex items-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all group ${autoSkipEnabled ? 'text-cyan-400' : 'text-slate-500 hover:text-cyan-400'}`}
+                >
+                  <i className={`fa-solid fa-forward-fast text-xs group-hover:translate-x-0.5 transition-transform ${!autoSkipEnabled && 'opacity-50'}`}></i>
+                  Auto Skip: {autoSkipEnabled ? 'ON' : 'OFF'}
                 </button>
                 <button className="flex items-center gap-3 text-[10px] font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest group">
                   <i className="fa-solid fa-download text-xs group-hover:-translate-y-0.5 transition-transform"></i>
@@ -1224,7 +2127,7 @@ export default function PlayerPage() {
                       ref={isItemActive ? activeEpisodeRef : null}
                       className={`flex items-center gap-4 p-3 rounded-2xl transition-all group border cursor-pointer ${
                         isItemActive 
-                          ? 'bg-blue-600/20 border-blue-500/50 shadow-lg shadow-blue-500/10' 
+                          ? 'bg-blue-600/20 border-blue-500/50' 
                           : isWatched
                             ? 'bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10'
                             : 'hover:bg-white/5 border-transparent'
@@ -1255,6 +2158,23 @@ export default function PlayerPage() {
                             <i className="fa-solid fa-check text-[7px] text-white"></i>
                           </div>
                         )}
+
+                        {/* Visual Progress Bar for Sidebar */}
+                        {(() => {
+                          const historyData = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('ah_watch_progress') || '{}') : {};
+                          const progressPercent = historyData[`${anime.id}_${epNum}`];
+                          if (progressPercent > 5) {
+                            return (
+                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-10">
+                                <div 
+                                  className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
+                                  style={{ width: `${progressPercent}%` }}
+                                />
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
 
                       <div className="flex-grow min-w-0">
@@ -1270,7 +2190,7 @@ export default function PlayerPage() {
                             {version === 'dub' ? 'Dub PT-BR' : 'Leg PT-BR'}
                           </p>
                           {isItemActive && (
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)] animate-pulse" />
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
                           )}
                         </div>
                       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { Anime, AniListAPI } from '@/lib/api';
 import EpisodeCard from './EpisodeCard';
 
@@ -16,12 +16,27 @@ export default function RecentListClient({ initialAnimes }: RecentListClientProp
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Reset state if initialAnimes changes
-    setAnimes(initialAnimes);
-    setPage(2);
-    setHasMore(true);
-  }, [initialAnimes]);
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+    
+    setLoading(true);
+    try {
+      const { animes: nextAnimes, pageInfo } = await AniListAPI.getRecent(page, 20);
+      if (nextAnimes && nextAnimes.length > 0) {
+        setAnimes(prev => [...prev, ...nextAnimes]);
+        setPage(prev => prev + 1);
+        if (!pageInfo?.hasNextPage || nextAnimes.length < 20) {
+          setHasMore(false);
+        }
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Failed to load more recent animes", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [hasMore, loading, page]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -43,29 +58,7 @@ export default function RecentListClient({ initialAnimes }: RecentListClientProp
         observerRef.current.disconnect();
       }
     };
-  }, [loading, hasMore]); // Re-bind observer when loading/hasMore changes
-
-  const loadMore = async () => {
-    if (loading || !hasMore) return;
-    
-    setLoading(true);
-    try {
-      const nextAnimes = await AniListAPI.getRecent(page, 20);
-      if (nextAnimes && nextAnimes.length > 0) {
-        setAnimes(prev => [...prev, ...nextAnimes]);
-        setPage(prev => prev + 1);
-        if (nextAnimes.length < 20) {
-          setHasMore(false);
-        }
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Failed to load more recent animes", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadMore]);
 
   return (
     <>
