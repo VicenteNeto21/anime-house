@@ -371,7 +371,7 @@ export default function ContinueWatching() {
             return (
               <Link
                 key={`${item.id}-${item.episode}`}
-                href={`/player/${AniListAPI.slugify(item.title)}/${item.episode}`}
+                href={`/player/${item.id}-${AniListAPI.slugify(item.title)}/${item.episode}`}
                 className="group relative flex-none w-[240px] md:w-[320px] aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 border border-white/5 hover:border-blue-500/50 transition-all shadow-xl snap-start"
               >
                 <Image

@@ -68,7 +68,7 @@ export default async function AnimeDetailsPage({
               
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-8">
                 <Link
-                  href={`/player/${AniListAPI.slugify(anime.title)}/1`}
+                  href={`/player/${anime.id}-${AniListAPI.slugify(anime.title)}/1`}
                   className="flex-grow sm:flex-grow-0 h-14 flex items-center justify-center gap-3 px-10 bg-blue-600 hover:bg-blue-500 rounded-2xl text-white font-black uppercase text-xs tracking-widest transition-all hover:scale-105 active:scale-95"
                 >
                   <i className="fa-solid fa-play"></i>

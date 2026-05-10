@@ -8,6 +8,7 @@ import AddToList from '@/components/anime/AddToList';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Hls from 'hls.js';
+import { formatEpisodeLabel, translateEpisodeTitle } from '@/lib/episodeTitles';
 
 const slugify = (title: string) => {
   return title
@@ -118,7 +119,7 @@ export default function PlayerPage() {
     saveResumeProgress('episode-change');
     setActiveEp(epNum);
     // Use window.history to update URL without triggering Next.js route change re-render
-    const slug = anime ? AniListAPI.slugify(anime.title) : id;
+    const slug = anime ? `${anime.id}-${AniListAPI.slugify(anime.title)}` : id;
     window.history.pushState(null, '', `/player/${slug}/${epNum}`);
   };
 
@@ -2122,6 +2123,20 @@ export default function PlayerPage() {
                   <i className="fa-solid fa-list-ul text-blue-500 text-sm"></i>
                   <h3 className="font-black text-[11px] uppercase tracking-[0.2em] text-white">Episódios</h3>
                 </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-white/5 border border-white/5 px-3 py-2">
+                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Atual</p>
+                    <p className="text-[10px] font-black text-white">{formatEpisodeLabel(currentEp)}</p>
+                  </div>
+                  <div className="rounded-xl bg-white/5 border border-white/5 px-3 py-2">
+                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Total</p>
+                    <p className="text-[10px] font-black text-white">{Number(anime.episodesReleased) || Number(anime.episodes) || 1}</p>
+                  </div>
+                  <div className="rounded-xl bg-white/5 border border-white/5 px-3 py-2">
+                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Audio</p>
+                    <p className="text-[10px] font-black text-white uppercase">{version === 'dub' ? 'Dub' : 'Leg'}</p>
+                  </div>
+                </div>
               </div>
 <div 
                 ref={episodesContainerRef}
@@ -2135,12 +2150,16 @@ export default function PlayerPage() {
                   const aniListProgress = Number(userAniListInfo?.progress || 0);
                   const effectiveProgress = Math.max(aniListProgress, localProgress);
                   const isCompleted = userAniListInfo?.status === 'COMPLETED';
+                  const totalEpisodeCount = Number(anime.episodesReleased) || Number(anime.episodes) || 1;
+                  const watchedCount = isCompleted ? totalEpisodeCount : Math.min(effectiveProgress, totalEpisodeCount);
+                  const listProgressPercent = Math.round((watchedCount / totalEpisodeCount) * 100);
 
-                  return Array.from({ length: Number(anime.episodesReleased) || Number(anime.episodes) || 1 }).map((_, i) => {
+                  return Array.from({ length: totalEpisodeCount }).map((_, i) => {
                   const epNum = i + 1;
                   const isItemActive = Number(activeEp) === epNum;
                   const isWatched = isCompleted || epNum <= effectiveProgress;
                   const epData = anime.streamingEpisodes?.[i];
+                  const episodeTitle = translateEpisodeTitle(epData?.title, epNum);
 
                   return (
                     <div
@@ -2203,18 +2222,28 @@ export default function PlayerPage() {
                         <h4 className={`text-[10px] font-black tracking-tight truncate transition-colors ${
                           isItemActive ? 'text-white' : isWatched ? 'text-emerald-400' : 'text-slate-400'
                         } group-hover:text-white`}>
-                          EP {epNum.toString().padStart(2, '0')} - {epData?.title || 'Sem título'}
+                          {formatEpisodeLabel(epNum)} - {episodeTitle}
                         </h4>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <p className={`text-[8px] font-black uppercase tracking-[0.1em] ${
                             isItemActive ? 'text-blue-400' : isWatched ? 'text-emerald-500/50' : 'text-slate-600'
                           }`}>
                             {version === 'dub' ? 'Dub PT-BR' : 'Leg PT-BR'}
                           </p>
+                          <span className={`text-[8px] font-black uppercase ${
+                            isWatched ? 'text-emerald-500/50' : 'text-slate-600'
+                          }`}>
+                            {isWatched ? 'Assistido' : 'Pendente'}
+                          </span>
                           {isItemActive && (
                             <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
                           )}
                         </div>
+                        {isItemActive && (
+                          <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.16em] text-blue-300/70">
+                            {watchedCount}/{totalEpisodeCount} vistos - {listProgressPercent}%
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -2224,6 +2253,9 @@ export default function PlayerPage() {
 
               <div className="p-4 border-t border-white/5 bg-slate-950/30">
                 <p className="text-[8px] text-slate-500 font-black uppercase tracking-[0.3em] text-center">Você está assistindo agora</p>
+                <p className="mt-1 text-[10px] text-white font-black uppercase text-center truncate">
+                  {formatEpisodeLabel(currentEp)} - {translateEpisodeTitle(anime.streamingEpisodes?.[currentEp - 1]?.title, currentEp)}
+                </p>
               </div>
             </div>
           </div>

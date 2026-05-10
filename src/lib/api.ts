@@ -427,7 +427,10 @@ export const AniListAPI = {
   },
 
   async getDetails(id: string | number): Promise<Anime | null> {
-    const isIdNumeric = !isNaN(Number(id));
+        const idStr = String(id);
+    const isIdNumeric = !isNaN(Number(idStr));
+    const isCombinedId = /^\d+-/.test(idStr);
+
     const gql = `
     query ($id: Int, $search: String) {
       Media (id: $id, search: $search, type: ANIME) {
@@ -484,7 +487,16 @@ export const AniListAPI = {
         }
       }
     }`;
-    const variables = isIdNumeric ? { id: Number(id) } : { search: String(id).replace(/-/g, ' ') };
+        let variables: any = {};
+    if (isIdNumeric) {
+      variables = { id: Number(idStr) };
+    } else if (isCombinedId) {
+      const numericPart = idStr.split('-')[0];
+      variables = { id: Number(numericPart) };
+    } else {
+      variables = { search: idStr.replace(/-/g, ' ') };
+    }
+
     const data = await this.query(gql, variables, undefined, true); // Force refresh para garantir novos campos (Seasons)
     const anime = this.mapAniListToInternal(data?.Media);
 

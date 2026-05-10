@@ -7,6 +7,7 @@ import Image from 'next/image';
 
 import { WatchHistory } from '@/lib/history';
 import { useState, useEffect } from 'react';
+import { formatEpisodeLabel, translateEpisodeTitle } from '@/lib/episodeTitles';
 
 interface EpisodeListProps {
   animeId: number;
@@ -36,8 +37,6 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
       if (libraryItem?.status === 'COMPLETED') {
         setUserProgress(totalEpisodes);
       } else {
-        // Prioriza o progresso do AniList (que no modo REPEATING reinicia do 0)
-        // Se houver histórico local mais avançado (não sincronizado), usa ele.
         const aniListProgress = libraryItem?.progress || 0;
         const historyProgress = localItem?.episode || 0;
         
@@ -48,7 +47,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
     calculateProgress();
     window.addEventListener('ah-history-update', calculateProgress);
     return () => window.removeEventListener('ah-history-update', calculateProgress);
-  }, [libraryItem, animeId]);
+  }, [libraryItem, animeId, totalEpisodes]);
 
   // Se tivermos thumbnails, usamos o grid de cards detalhados
   if (streamingEpisodes && streamingEpisodes.length > 0) {
@@ -60,11 +59,12 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
           const isCurrent = epNum === userProgress;
           const isRewatching = libraryItem?.status === 'REPEATING';
           const epData = streamingEpisodes[i];
+          const episodeTitle = translateEpisodeTitle(epData?.title, epNum);
 
           return (
             <Link
               key={i}
-              href={`/player/${AniListAPI.slugify(animeTitle)}/${epNum}`}
+              href={`/player/${animeId}-${AniListAPI.slugify(animeTitle)}/${epNum}`}
               className={`group relative flex items-center gap-3 bg-slate-900/40 border rounded-xl overflow-hidden transition-all p-2 ${
                 isCurrent ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/5 hover:border-blue-500/30 hover:bg-slate-800/50'
               }`}
@@ -78,11 +78,9 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
                   className="object-cover group-hover:scale-110 transition-transform duration-500 brightness-90 group-hover:brightness-100"
                   sizes="112px"
                 />
-                {/* Play on hover */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                   <i className="fa-solid fa-play text-white text-xs"></i>
                 </div>
-                {/* Watched tint */}
                 {isWatched && (
                   <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none" />
                 )}
@@ -91,7 +89,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
               {/* Info */}
               <div className="flex-grow min-w-0 py-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase">EP {epNum}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase">{formatEpisodeLabel(epNum)}</span>
                   {isCurrent && (
                     <span className="text-[8px] font-black text-blue-400 uppercase tracking-wider">● Atual</span>
                   )}
@@ -102,7 +100,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
                 <h4 className={`text-[11px] font-bold truncate group-hover:text-blue-400 transition-colors leading-tight ${
                   isWatched ? 'text-emerald-400/80' : 'text-slate-200'
                 }`}>
-                  {epData?.title || `Episódio ${epNum}`}
+                  {episodeTitle}
                 </h4>
               </div>
 
@@ -119,7 +117,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
     );
   }
 
-  // Fallback para o grid de números simples (caso não haja thumbnails na API)
+  // Fallback para o grid de números simples
   return (
     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
       {Array.from({ length: totalEpisodes }).map((_, i) => {
@@ -129,7 +127,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
         return (
           <Link
             key={i}
-            href={`/player/${AniListAPI.slugify(animeTitle)}/${epNum}`}
+            href={`/player/${animeId}-${AniListAPI.slugify(animeTitle)}/${epNum}`}
             className={`relative aspect-square border rounded-xl flex items-center justify-center text-[11px] font-black transition-all shadow-sm overflow-hidden ${
               isWatched 
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' 

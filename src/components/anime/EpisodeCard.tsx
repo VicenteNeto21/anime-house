@@ -62,7 +62,7 @@ export default function EpisodeCard({ anime, hideIfCompleted = false }: EpisodeC
   if (hideIfCompleted && isWatched) return null;
 
   return (
-    <Link href={`/player/${AniListAPI.slugify(anime.title)}/${currentEp}`} className="group flex flex-col cursor-pointer">
+    <Link href={`/player/${anime.id}-${AniListAPI.slugify(anime.title)}/${currentEp}`} className="group flex flex-col cursor-pointer">
       <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-900 border border-white/5 group-hover:border-blue-500/30 transition-all duration-300">
         <Image
           src={anime.poster}
@@ -98,7 +98,6 @@ export default function EpisodeCard({ anime, hideIfCompleted = false }: EpisodeC
           <span className="px-1.5 py-0.5 bg-[#3b82f6] text-[9px] font-black rounded text-white uppercase">
             FULL HD
           </span>
-
         </div>
 
         {/* Hover Icon */}
