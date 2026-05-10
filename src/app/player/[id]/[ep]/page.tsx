@@ -257,7 +257,27 @@ export default function PlayerPage() {
       const saved = localStorage.getItem(resumeKey);
       if (!saved) continue;
       const snapshot = parseResumeSnapshot(saved);
-      if (snapshot) return snapshot;
+      if (!snapshot) continue;
+
+      const hasSnapshotEpisode = typeof snapshot.episode === 'number';
+      const hasSnapshotAnimeId = snapshot.animeId !== undefined && snapshot.animeId !== null;
+      const isExactKey = key ? resumeKey === key : false;
+
+      if (hasSnapshotEpisode && snapshot.episode !== currentEp) {
+        localStorage.removeItem(resumeKey);
+        continue;
+      }
+
+      if (hasSnapshotAnimeId && anime?.id && String(snapshot.animeId) !== String(anime.id)) {
+        localStorage.removeItem(resumeKey);
+        continue;
+      }
+
+      if (!isExactKey && (!hasSnapshotEpisode || !hasSnapshotAnimeId)) {
+        continue;
+      }
+
+      return snapshot;
     }
 
     return null;
@@ -626,9 +646,11 @@ export default function PlayerPage() {
     if (savedResume) {
       const savedTime = savedResume.time;
       const duration = videoRef.current?.duration || savedResume.duration || 0;
+      const isSameEpisode = !savedResume.episode || savedResume.episode === currentEp;
+      const isSameAnime = !savedResume.animeId || String(savedResume.animeId) === String(anime.id);
       
       // Só oferece resume se tiver mais de 10s e menos de 95% do total
-      if (savedTime > 10 && (duration === 0 || savedTime < duration * 0.95)) {
+      if (isSameEpisode && isSameAnime && savedTime > 10 && (duration === 0 || savedTime < duration * 0.95)) {
         setResumeTime(savedTime);
         setShowResumePrompt(true);
         setTimeout(() => setShowResumePrompt(false), 8000); // Esconde após 8s
@@ -1580,7 +1602,7 @@ export default function PlayerPage() {
                               <i className="fa-solid fa-clock-rotate-left text-lg"></i>
                             </div>
                             <div className="flex-grow">
-                              <p className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-0.5">Continuar assistindo?</p>
+                              <p className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-0.5">Continuar EP {currentEp.toString().padStart(2, '0')}?</p>
                               <p className="text-xs font-black text-white tracking-tight uppercase">Retomar em {formatTime(resumeTime)}</p>
                             </div>
                             <div className="flex items-center gap-2">

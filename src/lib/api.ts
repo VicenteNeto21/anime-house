@@ -144,6 +144,11 @@ export const AniListAPI = {
       .replace(/^-+|-+$/g, ''); // Remove hífens no início e fim
   },
 
+  getPreferredTitle(title?: { romaji?: string | null; english?: string | null; native?: string | null }) {
+    if (!title) return 'Sem titulo';
+    return title.romaji || title.english || title.native || 'Sem titulo';
+  },
+
   async query(query: string, variables: any = {}, token?: string, forceRefresh = false) {
     const isMutation = query.trimStart().startsWith('mutation');
     const cacheKey = JSON.stringify({ query, variables, token: token ? 'auth' : 'public' });
@@ -287,7 +292,7 @@ export const AniListAPI = {
     const recommendations = (media.recommendations?.nodes || [])
       .map((node: any) => node.mediaRecommendation ? {
         id: node.mediaRecommendation.id,
-        title: node.mediaRecommendation.title.romaji || node.mediaRecommendation.title.english,
+        title: this.getPreferredTitle(node.mediaRecommendation.title),
         poster: node.mediaRecommendation.coverImage?.large,
         rating: node.mediaRecommendation.averageScore ? (node.mediaRecommendation.averageScore / 10).toFixed(1) : "N/A",
         year: node.mediaRecommendation.seasonYear || "N/A",
@@ -305,7 +310,7 @@ export const AniListAPI = {
     return {
       id: media.id,
       malId: media.idMal,
-      title: media.title.romaji || media.title.english || media.title.native,
+      title: this.getPreferredTitle(media.title),
       titleEnglish: media.title.english,
       titleRomaji: media.title.romaji,
       poster: media.coverImage.extraLarge || media.coverImage.large,
@@ -345,7 +350,7 @@ export const AniListAPI = {
           relationType: edge.relationType,
           id: edge.node.id,
           type: edge.node.type,
-          title: edge.node.title.romaji || edge.node.title.english,
+          title: this.getPreferredTitle(edge.node.title),
           poster: edge.node.coverImage?.large,
           format: this.maps.formats[edge.node.format] || edge.node.format,
           year: edge.node.seasonYear || '??',
@@ -635,7 +640,7 @@ export const AniListAPI = {
         episode: item.episode,
         media: {
           id: item.media.id,
-          title: item.media.title.romaji || item.media.title.english,
+          title: this.getPreferredTitle(item.media.title),
           poster: item.media.coverImage.large,
           format: this.maps.formats[item.media.format] || item.media.format,
           status: item.media.status === 'RELEASING' ? 'Em Lançamento' : 'Finalizado',
@@ -779,7 +784,7 @@ export const AniListAPI = {
 
     return allEntries.map((entry: any) => ({
       id: entry.media.id,
-      title: entry.media.title.english || entry.media.title.romaji || entry.media.title.native,
+      title: this.getPreferredTitle(entry.media.title),
       cover: entry.media.coverImage.large,
       format: entry.media.format,
       progress: entry.progress,

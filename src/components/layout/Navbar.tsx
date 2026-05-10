@@ -97,8 +97,8 @@ export default function Navbar() {
         <div className="container mx-auto h-16 flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center gap-1.5 group">
-              <span className="text-xl md:text-2xl font-black tracking-tighter uppercase text-white">ANIME</span>
-              <span className="text-xl md:text-2xl font-black tracking-tighter uppercase text-[#3b82f6] group-hover:text-blue-400 transition-colors">HOUSE</span>
+              <span className="font-display text-xl md:text-2xl font-black uppercase text-white">ANIME</span>
+              <span className="font-display text-xl md:text-2xl font-black uppercase text-[#3b82f6] group-hover:text-blue-400 transition-colors">HOUSE</span>
             </Link>
 
             <div className="hidden lg:flex items-center gap-6 text-[11px] font-black uppercase tracking-widest text-slate-400">

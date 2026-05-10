@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid md:grid-cols-4 gap-12 text-left">
           <div className="col-span-2">
-            <span className="text-2xl font-black tracking-tighter uppercase mb-6 block text-white">
+            <span className="font-display text-2xl font-black uppercase mb-6 block text-white">
               ANIME<span className="text-blue-500">HOUSE</span>
             </span>
             <p className="text-slate-400 max-w-sm mb-8 text-sm leading-relaxed">
