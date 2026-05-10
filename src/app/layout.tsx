@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { Archivo_Black, Sora } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import CookieConsent from "@/components/layout/CookieConsent";
 import AuthHandler from "@/components/auth/AuthHandler";
 import { LibraryProvider } from "@/context/LibraryContext";
 import { Providers } from "@/components/Providers";
@@ -34,6 +36,12 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9879597043409013"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <link 
           rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
@@ -52,10 +60,10 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <CookieConsent />
           </LibraryProvider>
         </Providers>
       </body>
     </html>
   );
 }
-

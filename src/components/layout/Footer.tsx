@@ -28,7 +28,9 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-6 text-[10px] uppercase tracking-[0.2em] text-slate-500">Navegação</h4>
             <ul className="space-y-4 text-slate-400 text-sm font-medium">
-              <li><Link href="/" className="hover:text-blue-500 transition-colors">Início</Link></li>
+                            <li><Link href="/" className="hover:text-blue-500 transition-colors">Início</Link></li>
+              <li><Link href="/sobre" className="hover:text-blue-500 transition-colors">Sobre Nós</Link></li>
+
               <li><Link href="/lista" className="hover:text-blue-500 transition-colors">Lista de Animes</Link></li>
               <li><Link href="/generos" className="hover:text-blue-500 transition-colors">Gêneros</Link></li>
               <li><Link href="/calendario" className="hover:text-blue-500 transition-colors">Calendário</Link></li>
