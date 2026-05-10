@@ -36,12 +36,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9879597043409013"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        ></script>
         <link 
           rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
