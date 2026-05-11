@@ -4,6 +4,7 @@ import ContinueWatching from '@/components/anime/ContinueWatching';
 import CalendarSection from '@/components/anime/CalendarSection';
 import { AniListAPI } from '@/lib/api';
 import AnimeCard from '@/components/anime/AnimeCard';
+import NewsSection from '@/components/anime/NewsSection';
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const { page } = await searchParams;
@@ -30,6 +31,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       <div className="space-y-4 pb-20">
         <ContinueWatching />
         <RecentSection page={currentPage} />
+        <NewsSection />
 
         <TopRanking />
       </div>

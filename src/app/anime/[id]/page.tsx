@@ -5,6 +5,27 @@ import TrailerButton from '@/components/anime/TrailerButton';
 import FavoriteButton from '@/components/anime/FavoriteButton';
 import AddToList from '@/components/anime/AddToList';
 import EpisodeList from '@/components/anime/EpisodeList';
+import { Metadata } from 'next';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
+// 1. Metadata Dinâmico para SEO (Google Busca)
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const anime = await AniListAPI.getDetails(id);
+
+  if (!anime) return { title: 'Anime não encontrado | Anime House' };
+
+  return {
+    title: `${anime.title} - Assistir Online Grátis | Anime House`,
+    description: `Assista ${anime.title} online em HD. ${anime.description?.substring(0, 150).replace(/<[^>]*>/g, '')}... Confira sinopse, elenco, equipe técnica e muito mais no melhor portal de animes.`,
+    openGraph: {
+      title: anime.title,
+      description: anime.description?.substring(0, 160).replace(/<[^>]*>/g, ''),
+      images: [anime.banner || anime.poster],
+      type: 'video.tv_show',
+    }
+  };
+}
 
 export default async function AnimeDetailsPage({
   params,
@@ -16,8 +37,37 @@ export default async function AnimeDetailsPage({
 
   if (!anime) return <div>Anime não encontrado.</div>;
 
+  // 2. Dados Estruturados (Schema.org) para o Robô do Google
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TVSeries",
+    "name": anime.title,
+    "image": anime.poster,
+    "description": anime.description?.replace(/<[^>]*>/g, ''),
+    "genre": anime.genres,
+    "numberOfEpisodes": anime.episodes,
+    "status": anime.status === 'Em Lançamento' ? 'Continuing' : 'Finished',
+    "author": anime.studios?.map(s => ({ "@type": "Organization", "name": s })),
+    "aggregateRating": anime.rating !== 'N/A' ? {
+      "@type": "AggregateRating",
+      "ratingValue": anime.rating,
+      "bestRating": "10",
+      "worstRating": "1",
+      "ratingCount": anime.popularity || 100
+    } : undefined,
+    "actor": anime.characters?.slice(0, 5).map(c => ({
+      "@type": "PerformanceRole",
+      "actor": { "@type": "Person", "name": c.voiceActor?.name || 'Dublador' },
+      "characterName": c.name
+    }))
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero Banner Section */}
       {/* Hero Banner Section */}
       <div className="relative w-full min-h-[60vh] md:h-[65vh] flex items-end overflow-hidden">
@@ -44,6 +94,7 @@ export default async function AnimeDetailsPage({
 
             {/* Info Overlay */}
             <div className="flex-grow z-10">
+              <Breadcrumbs items={[{ label: 'Animes', href: '/lista' }, { label: anime.title }]} />
               <div className="flex flex-col gap-1 mb-4 items-center md:items-start">
                 <span className="text-[10px] md:text-xs font-black text-blue-500 uppercase tracking-[0.4em] mb-1">
                   {anime.titleNative || anime.titleRomaji}
@@ -146,6 +197,14 @@ export default async function AnimeDetailsPage({
                   <p className="text-xs font-bold text-emerald-500">{anime.status}</p>
                 </div>
                 <div>
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] block mb-2">Fonte Original</label>
+                  <p className="text-xs font-bold text-slate-300 uppercase">{anime.source}</p>
+                </div>
+                <div>
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] block mb-2">Duração</label>
+                  <p className="text-xs font-bold text-slate-300 uppercase">{anime.duration}</p>
+                </div>
+                <div>
                   <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] block mb-2">Gêneros</label>
                   <div className="flex flex-wrap gap-2">
                     {anime.genres?.map(g => (
@@ -176,6 +235,77 @@ export default async function AnimeDetailsPage({
                   </div>
                 )}
               </div>
+
+              {/* Official Streaming Platforms Section */}
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <i className="fa-solid fa-tv text-blue-500"></i>
+                  Assista Oficialmente
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Links Dinâmicos do AniList (Reais) */}
+                  {anime.externalLinks && anime.externalLinks.length > 0 && 
+                    anime.externalLinks
+                      .filter(link => link.type === 'STREAMING' || link.site.toLowerCase().includes('site'))
+                      .slice(0, 6)
+                      .map((link) => (
+                        <a 
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:bg-blue-500/20 hover:border-blue-500/40 transition-all group"
+                          title={`Ver ${link.site}`}
+                        >
+                          <img 
+                            src={link.icon || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=64`} 
+                            alt={link.site} 
+                            className="w-4 h-4 rounded-sm" 
+                          />
+                          <span className="text-[9px] font-black text-blue-200 group-hover:text-white uppercase truncate">
+                            {link.site}
+                          </span>
+                        </a>
+                      ))
+                  }
+
+                  {/* Fallback/Principais (Garantia) */}
+                  {[
+                    { name: 'Crunchyroll', url: 'https://crunchyroll.com', domain: 'crunchyroll.com' },
+                    { name: 'Netflix', url: 'https://netflix.com', domain: 'netflix.com' },
+                    { name: 'Disney+', url: 'https://disneyplus.com', domain: 'disneyplus.com' },
+                    { name: 'Prime Video', url: 'https://primevideo.com', domain: 'primevideo.com' },
+                  ].map((platform) => {
+                    // Evita duplicar se o AniList já trouxe
+                    if (anime.externalLinks?.some(l => l.url.includes(platform.domain))) return null;
+                    
+                    const directLink = anime.streamingEpisodes?.find(ep => ep.url.includes(platform.domain))?.url || platform.url;
+                    
+                    return (
+                      <a 
+                        key={platform.name}
+                        href={directLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 bg-slate-800/40 border border-white/5 rounded-xl hover:bg-slate-800 hover:border-blue-500/30 transition-all group"
+                        title={`Assistir na ${platform.name}`}
+                      >
+                        <img 
+                          src={`https://www.google.com/s2/favicons?domain=${platform.domain}&sz=64`} 
+                          alt={platform.name} 
+                          className="w-4 h-4 rounded-sm" 
+                        />
+                        <span className="text-[9px] font-black text-slate-400 group-hover:text-white uppercase truncate">
+                          {platform.name}
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-[9px] text-slate-500 font-medium italic leading-tight">
+                  Apoie a indústria oficial assistindo em plataformas licenciadas.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -190,13 +320,13 @@ export default async function AnimeDetailsPage({
                   Episódios
                 </h2>
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg">
-                  {anime.episodes || '??'} no Total
+                  {anime.episodesReleased || 0} {anime.episodesReleased === 1 ? 'Episódio' : 'Episódios'}
                 </span>
               </div>
               <EpisodeList 
                 animeId={Number(anime.id)} 
                 animeTitle={anime.title}
-                totalEpisodes={Number(anime.episodesReleased) || Number(anime.episodes) || 1} 
+                totalEpisodes={Number(anime.episodesReleased) || 1} 
                 streamingEpisodes={anime.streamingEpisodes}
               />
             </section>
@@ -249,23 +379,25 @@ export default async function AnimeDetailsPage({
               </section>
             )}
 
-            {/* 3. Characters & Voice Actors (Novo) */}
+            {/* 3. Characters & Voice Actors */}
             {anime.characters && anime.characters.length > 0 && (
               <section className="mb-16">
-                <h2 className="text-xl font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
-                  <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
-                  Personagens e Elenco
-                </h2>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
+                    <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                    Personagens e Elenco
+                  </h2>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {anime.characters.map((char, idx) => (
-                    <div key={idx} className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:border-blue-500/30 transition-all shadow-lg hover:shadow-blue-500/5">
+                    <div key={idx} className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:border-blue-500/30 transition-all shadow-lg hover:shadow-blue-500/5 backdrop-blur-sm">
                       {/* Character Info */}
                       <div className="flex items-center gap-4">
-                        <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-white/10 shadow-md">
+                        <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-white/10 shadow-md bg-slate-800">
                           <img src={char.image} alt={char.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-black text-white truncate max-w-[120px]">{char.name}</h4>
+                          <h4 className="text-sm font-black text-white truncate max-w-[110px]">{char.name}</h4>
                           <span className="text-[9px] font-black uppercase text-blue-500 tracking-widest">{char.role === 'MAIN' ? 'Protagonista' : 'Suporte'}</span>
                         </div>
                       </div>
@@ -273,15 +405,38 @@ export default async function AnimeDetailsPage({
                       {/* Voice Actor Info */}
                       {char.voiceActor && (
                         <div className="flex items-center gap-3 text-right">
-                          <div>
-                            <h4 className="text-[10px] font-bold text-slate-300 truncate max-w-[100px]">{char.voiceActor.name}</h4>
+                          <div className="hidden sm:block">
+                            <h4 className="text-[10px] font-bold text-slate-300 truncate max-w-[90px]">{char.voiceActor.name}</h4>
                             <span className="text-[8px] font-medium text-slate-500 uppercase">Dublador JP</span>
                           </div>
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 opacity-70 group-hover:opacity-100 transition-opacity bg-slate-800">
                             <img src={char.voiceActor.image} alt={char.voiceActor.name} className="w-full h-full object-cover" />
                           </div>
                         </div>
                       )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Staff Section (Novo) */}
+            {anime.staff && anime.staff.length > 0 && (
+              <section className="mb-16">
+                <h2 className="text-xl font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
+                  <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                  Produção e Staff
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {anime.staff.map((s, idx) => (
+                    <div key={idx} className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 flex items-center gap-4 group hover:border-blue-500/30 transition-all shadow-lg hover:shadow-blue-500/5">
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-white/10 shadow-md bg-slate-800">
+                        <img src={s.image} alt={s.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-white truncate max-w-[150px]">{s.name}</h4>
+                        <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{s.role}</span>
+                      </div>
                     </div>
                   ))}
                 </div>

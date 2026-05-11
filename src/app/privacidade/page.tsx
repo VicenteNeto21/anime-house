@@ -1,84 +1,103 @@
 import React from 'react';
 
 export const metadata = {
-  title: 'Política de Privacidade | Anime House',
-  description: 'Política de Privacidade e Proteção de Dados do Anime House, em conformidade com a LGPD.',
+  title: 'Data Protection & Privacy Policy | Anime House',
+  description: 'Política de Privacidade e Proteção de Dados do Anime House, em conformidade com a LGPD e diretrizes globais de privacidade.',
 };
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-slate-950 pt-24 pb-20 text-slate-100">
+    <main className="min-h-screen bg-slate-950 pt-24 pb-20">
       <div className="container mx-auto px-4 max-w-4xl">
-        {/* Header */}
-        <div className="mb-12 border-b border-white/10 pb-8 text-center">
-          <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">
-            Política de <span className="text-blue-600">Privacidade</span>
+        {/* Header Profissional */}
+        <div className="mb-16 border-b border-white/10 pb-12 text-left">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="px-3 py-1 bg-blue-600/10 text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] border border-blue-500/20 rounded-md">
+              Data Privacy & Security
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-6">
+            Política de <span className="text-blue-500">Privacidade</span>
           </h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">
-            Última Atualização: 03 de Maio de 2026 • Em Conformidade com a LGPD
+          <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-3xl">
+            Sua privacidade é nossa prioridade. Este documento detalha como o Anime House coleta, utiliza e protege suas informações em total conformidade com a LGPD (Lei 13.709/2018).
           </p>
         </div>
 
-        {/* Content */}
-        <div className="space-y-10 text-slate-300 leading-relaxed text-justify">
-          <section>
-            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-              <span className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
-              1. Preâmbulo e Base Legal
+        {/* Content Body */}
+        <div className="space-y-12 text-slate-300 text-sm md:text-base leading-relaxed">
+
+          <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm">
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+              <i className="fa-solid fa-user-shield text-blue-500"></i>
+              Compromisso com o Titular
             </h2>
-            <p>
-              O <strong>Anime House</strong>, doravante denominado "Plataforma", estabelece esta Política de Privacidade para reafirmar seu compromisso com a transparência e a segurança no tratamento de dados pessoais. Este documento foi redigido em observância à <strong>Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD)</strong>, ao Marco Civil da Internet (Lei nº 12.965/2014) e às melhores práticas internacionais de <em>data protection</em>.
+            <p className="mb-4">
+              O Anime House adota o princípio de <strong>Privacy by Design</strong>. Isso significa que nossa plataforma foi construída pensando na proteção de dados desde a primeira linha de código, garantindo que o tratamento de informações ocorra apenas quando estritamente necessário.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-              <span className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
-              2. Coleta de Dados e Finalidades do Tratamento
+            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+              1. Coleta de Informações
             </h2>
-            <div className="space-y-4">
-              <p>O tratamento de dados na Plataforma limita-se ao mínimo necessário para a operação dos serviços, baseando-se nas seguintes categorias:</p>
-              <ul className="list-disc pl-6 space-y-3 marker:text-blue-600">
-                <li><strong>Dados de Acesso Técnico:</strong> Coletamos automaticamente endereços IP, logs de acesso, geolocalização aproximada e metadados de hardware para fins de segurança cibernética e prevenção de fraudes (Art. 7º, IX, LGPD).</li>
-                <li><strong>Dados de Experiência (Cookies e Cache):</strong> Armazenamos localmente seu histórico de visualização e progresso de episódios para garantir a continuidade do serviço, sob a base legal do legítimo interesse.</li>
-                <li><strong>Interação com APIs de Terceiros:</strong> Caso utilize integração com o AniList, os dados de autenticação são tratados via protocolo OAuth, garantindo que a Plataforma não tenha acesso direto à sua senha.</li>
-              </ul>
+            <p className="mb-6">Coletamos dados em três categorias principais para garantir o funcionamento e a segurança da plataforma:</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="p-6 bg-white/5 border border-white/5 rounded-2xl">
+                <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                  <i className="fa-solid fa-server text-blue-500 text-sm"></i> Dados Técnicos
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Endereços IP, tipo de navegador, sistema operacional e logs de acesso. Estes dados são usados exclusivamente para prevenção de ataques e diagnósticos de rede.
+                </p>
+              </div>
+              <div className="p-6 bg-white/5 border border-white/5 rounded-2xl">
+                <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                  <i className="fa-solid fa-cookie text-blue-500 text-sm"></i> Cookies e Preferências
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Utilizamos cookies locais para salvar seu progresso nos episódios e suas listas personalizadas, sem a necessidade de contas obrigatórias.
+                </p>
+              </div>
             </div>
           </section>
 
           <section>
-            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-              <span className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
-              3. Direitos e Prerrogativas do Usuário
+            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+              2. Uso de Dados e Publicidade (Google AdSense)
             </h2>
-            <p>
-              Na qualidade de Titular de Dados, o Usuário possui direitos inalienáveis, incluindo, mas não se limitando a: (i) confirmação da existência de tratamento; (ii) acesso integral aos dados; (iii) retificação de informações; (iv) anonimização ou eliminação de dados desnecessários; e (v) revogação do consentimento, quando aplicável. Tais requisições podem ser formalizadas através do nosso canal de suporte.
+            <p className="mb-4">
+              Para manter a gratuidade de nossos serviços, exibimos anúncios através do <strong>Google AdSense</strong>. O Google e seus parceiros utilizam cookies para veicular anúncios baseados em suas visitas anteriores a este ou outros sites na internet.
+            </p>
+            <p className="p-4 bg-blue-600/5 border-l-4 border-blue-600 text-slate-400 italic">
+              "Você pode optar por não receber publicidade personalizada visitando as Configurações de Anúncios do Google ou utilizando ferramentas de opt-out da Network Advertising Initiative."
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-              <span className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
-              4. Compartilhamento e Transferência Internacional
+            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+              3. Direitos do Titular (LGPD)
             </h2>
-            <p>
-              A Plataforma poderá compartilhar dados com provedores de serviços de nuvem e infraestrutura situados no exterior, assegurando que tais jurisdições possuam níveis adequados de proteção de dados ou que as transferências sejam amparadas por cláusulas contratuais padrão, conforme diretrizes da Autoridade Nacional de Proteção de Dados (ANPD).
+            <p className="mb-4">
+              Conforme a legislação brasileira, você possui o direito de: (i) Confirmar a existência de tratamento de dados; (ii) Acessar seus dados; (iii) Solicitar a anonimização ou exclusão de dados; (iv) Revogar seu consentimento a qualquer momento.
             </p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-              <span className="w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
-              5. Medidas de Segurança Cibernética
-            </h2>
-            <p>
-              Implementamos rigorosos protocolos de segurança, incluindo criptografia de ponta a ponta (SSL/TLS), firewalls de aplicação e monitoramento de rede 24/7. No entanto, ressaltamos que nenhum sistema é inteiramente impenetrável, e a segurança também depende da diligência do Usuário na proteção de seus próprios dispositivos.
+          <section className="bg-slate-900 border border-white/5 p-8 rounded-3xl text-center shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-4 uppercase tracking-widest">Encarregado de Proteção de Dados (DPO)</h2>
+            <p className="text-slate-400 mb-6 italic text-sm">
+              Para questões relacionadas à privacidade ou exercício de seus direitos, entre em contato:
+            </p>
+            <div className="inline-block px-8 py-4 bg-white/5 border border-blue-500/30 rounded-2xl">
+              <p className="text-xl md:text-2xl font-black text-white tracking-widest">vneto750@gmail.com</p>
+            </div>
+            <p className="mt-6 text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em]">
+              Departamento de Privacidade & Governança de Informação
             </p>
           </section>
-
-          <div className="mt-20 pt-10 border-t border-white/5 text-center italic text-sm text-slate-500">
-            © 2026 Anime House Legal Department. Este documento possui validade jurídica em território nacional.
-          </div>
         </div>
       </div>
     </main>

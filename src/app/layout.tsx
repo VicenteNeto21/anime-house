@@ -1,4 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 import { Suspense } from "react";
 import Script from "next/script";
 import { Archivo_Black, Sora } from "next/font/google";
@@ -26,6 +33,15 @@ const archivoBlack = Archivo_Black({
 export const metadata: Metadata = {
   title: "Anime House - Assista Animes Online em Full HD",
   description: "A melhor plataforma para você assistir seus animes favoritos em alta definição com a melhor experiência otaku.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Anime House",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

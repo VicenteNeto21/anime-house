@@ -19,9 +19,6 @@ export default function Navbar() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    console.log('Session Status:', status);
-    console.log('Session Data:', session);
-
     if (session?.user) {
       setUser({
         name: session.user.name,
@@ -84,6 +81,7 @@ export default function Navbar() {
 
   const desktopLinks = [
     { href: '/', label: 'Início' },
+    { href: '/noticias', label: 'Notícias' },
     { href: '/lista', label: 'Lista de Animes' },
     { href: '/generos', label: 'Gêneros' },
     { href: '/calendario', label: 'Calendário' },
@@ -147,7 +145,6 @@ export default function Navbar() {
 
                 {isUserMenuOpen && (
                   <>
-                    {/* Overlay agora atrás do menu mas na frente do resto */}
                     <div
                       className="fixed inset-0 z-[105] bg-transparent"
                       onClick={() => setIsUserMenuOpen(false)}
@@ -192,7 +189,6 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Mobile Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/5 text-white/70 hover:text-white transition-all cursor-pointer"
@@ -203,12 +199,12 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[99] bg-[#0a0f1c]/98 backdrop-blur-xl lg:hidden">
           <div className="flex flex-col items-center justify-center h-full gap-6 pt-16">
             {[
               { href: '/', label: 'Início', icon: 'fa-home' },
+              { href: '/noticias', label: 'Notícias', icon: 'fa-newspaper' },
               { href: '/lista', label: 'Lista de Animes', icon: 'fa-list' },
               { href: '/generos', label: 'Gêneros', icon: 'fa-tags' },
               { href: '/calendario', label: 'Calendário', icon: 'fa-calendar' },

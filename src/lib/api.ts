@@ -59,6 +59,31 @@ export interface Anime {
   popularity?: number;
   favorites?: number;
   isFavourite?: boolean;
+  externalLinks?: {
+    url: string;
+    site: string;
+    type: string;
+    icon: string | null;
+    color: string | null;
+  }[];
+  source?: string;
+  duration?: string;
+  staff?: {
+    role: string;
+    name: string;
+    image: string;
+  }[];
+}
+
+export interface News {
+  id: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  date: string;
+  url: string;
+  author?: string;
+  category?: string;
 }
 
 
@@ -129,7 +154,10 @@ export const AniListAPI = {
     } as Record<string, string>,
     formats: {
       'TV': 'Anime', 'TV_SHORT': 'Anime Curto', 'MOVIE': 'Filme', 'OVA': 'OVA', 'ONA': 'ONA', 'SPECIAL': 'Especial', 'MUSIC': 'Clipe'
-    } as Record<string, string>
+    } as Record<string, string>,
+    sources: {
+      'ORIGINAL': 'Original', 'MANGA': 'Mangá', 'LIGHT_NOVEL': 'Light Novel', 'VISUAL_NOVEL': 'Visual Novel', 'VIDEO_GAME': 'Video Game', 'OTHER': 'Outro', 'NOVEL': 'Novel', 'DOUJINSHI': 'Doujinshi', 'ANIME': 'Anime'
+    } as Record<string, string>,
   },
 
   slugify(text: string): string {
@@ -322,7 +350,7 @@ export const AniListAPI = {
       format: this.maps.formats[media.format] || media.format || "Série",
       status: media.status === 'RELEASING' ? 'Em Lançamento' : 'Finalizado',
       episodes: media.episodes || '??',
-      episodesReleased: episodesReleased || 0,
+      episodesReleased: episodesReleased || media.episodes || 0,
       genres: translatedGenres,
       currentEpisode: currentEpisode,
       studios: media.studios?.nodes?.map((s: any) => s.name),
@@ -367,11 +395,17 @@ export const AniListAPI = {
       popularity: media.popularity,
       favorites: media.favourites,
       isFavourite: media.isFavourite,
-      titleNative: media.title?.native
+      titleNative: media.title?.native,
+      externalLinks: media.externalLinks,
+      source: media.source ? this.maps.sources[media.source] || media.source : 'N/A',
+      duration: media.duration ? `${media.duration} min` : 'N/A',
+      staff: (media.staff?.edges || []).map((edge: any) => ({
+        role: edge.role,
+        name: edge.node.name.full,
+        image: edge.node.image.large
+      }))
     };
   },
-
-
 
   async getTrending(limit = 6): Promise<Anime[]> {
     const gql = `
@@ -427,14 +461,14 @@ export const AniListAPI = {
   },
 
   async getDetails(id: string | number): Promise<Anime | null> {
-        const idStr = String(id);
+    const idStr = String(id);
     const isIdNumeric = !isNaN(Number(idStr));
     const isCombinedId = /^\d+-/.test(idStr);
 
     const gql = `
     query ($id: Int, $search: String) {
       Media (id: $id, search: $search, type: ANIME) {
-        id idMal title { romaji english native } isFavourite
+        id idMal title { romaji english native } isFavourite externalLinks { url site type icon color }
         coverImage { extraLarge large }
         bannerImage
         description
@@ -445,13 +479,15 @@ export const AniListAPI = {
         status
         format
         genres
+        source
+        duration
         tags { name }
         popularity
         favourites
         studios(isMain: true) { nodes { name } }
         trailer { id site }
         nextAiringEpisode { episode }
-        characters(sort: ROLE, perPage: 6) {
+        characters(sort: ROLE, perPage: 9) {
           edges {
             role
             node {
@@ -459,6 +495,15 @@ export const AniListAPI = {
               image { large }
             }
             voiceActors(language: JAPANESE, sort: ROLE) {
+              name { full }
+              image { large }
+            }
+          }
+        }
+        staff(perPage: 6) {
+          edges {
+            role
+            node {
               name { full }
               image { large }
             }
@@ -487,7 +532,7 @@ export const AniListAPI = {
         }
       }
     }`;
-        let variables: any = {};
+    let variables: any = {};
     if (isIdNumeric) {
       variables = { id: Number(idStr) };
     } else if (isCombinedId) {
@@ -506,6 +551,56 @@ export const AniListAPI = {
       }
       // Adicionar trailer e elenco ao objeto
       anime.trailer = data.Media.trailer;
+
+      // Enriquecer com links do MyAnimeList se disponível
+      if (anime.malId) {
+        try {
+          const malData = await MyAnimeListAPI.getMalDetails(anime.malId);
+          if (malData) {
+            // Atualizar número de episódios se estiver faltando no AniList
+            if ((!anime.episodes || anime.episodes === '??') && malData.num_episodes) {
+              anime.episodes = malData.num_episodes;
+            }
+
+            const malStreaming = malData.streaming || [];
+            if (malStreaming.length > 0) {
+              const malLinks = malStreaming.map((s: any) => ({
+                url: s.url,
+                site: s.name,
+                type: 'STREAMING',
+                icon: null,
+                color: null
+              }));
+              
+              // Merge sem duplicar por URL
+              anime.externalLinks = [
+                ...(anime.externalLinks || []),
+                ...malLinks.filter((ml: any) => !anime.externalLinks?.some((al: any) => al.url === ml.url))
+              ];
+            }
+          }
+        } catch (e) {
+          console.warn('MAL_ENRICHMENT_SILENT_FAIL:', e);
+        }
+      }
+
+      // Fallback 3: Contagem via StreamingEpisodes (AniList)
+      if ((!anime.episodes || anime.episodes === '??') && data.Media.streamingEpisodes?.length > 0) {
+        anime.episodes = data.Media.streamingEpisodes.length;
+      }
+
+      // Fallback 4: Kitsu API (Último recurso)
+      if (!anime.episodes || anime.episodes === '??') {
+        try {
+          const kitsuData = await AnimeAPI.fetchKitsu(`/anime?filter[text]=${encodeURIComponent(anime.title)}&page[limit]=1`);
+          if (kitsuData?.data?.[0]?.attributes?.episodeCount) {
+            anime.episodes = kitsuData.data[0].attributes.episodeCount;
+          }
+        } catch (e) {
+          console.warn('KITSU_FALLBACK_FAIL:', e);
+        }
+      }
+
       anime.characters = data.Media.characters?.edges?.map((edge: any) => ({
         role: edge.role,
         name: edge.node.name.full,
@@ -808,6 +903,30 @@ export const AniListAPI = {
 
 
 
+export const MyAnimeListAPI = {
+  baseUrl: 'https://api.myanimelist.net/v2',
+
+  async getMalDetails(malId: number) {
+    if (!malId || typeof window !== 'undefined') return null;
+    
+    try {
+      const response = await fetch(`${this.baseUrl}/anime/${malId}?fields=streaming,num_episodes`, {
+        headers: {
+          'X-MAL-CLIENT-ID': process.env.MAL_CLIENT_ID || ''
+        },
+        next: { revalidate: 86400 } // Cache por 24h
+      });
+
+      if (!response.ok) return null;
+      
+      return await response.json();
+    } catch (e) {
+      console.error('MAL_DETAILS_ERROR:', e);
+      return null;
+    }
+  }
+};
+
 export const TMDBAPI = {
   async findIdByTitle(title: string) {
     const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -887,5 +1006,66 @@ export const BetterFlixAPI = {
       return `${this.baseUrl}?id=${id}&type=movie`;
     }
     return `${this.baseUrl}?id=${id}&type=tv&season=${season}&episode=${episode}`;
+  }
+};
+
+export const NewsAPI = {
+  async getLatestNews(page = 1, limit = 9): Promise<{ news: News[], totalResults: number }> {
+    const startIndex = (page - 1) * limit + 1;
+    const url = `https://www.mundodosotakus.com.br/feeds/posts/default?alt=json&start-index=${startIndex}&max-results=${limit}`;
+
+    try {
+      const response = await fetch(url, { next: { revalidate: 3600 } });
+      const data = await response.json();
+      
+      const totalResults = parseInt(data.feed?.openSearch$totalResults?.$t || '0');
+      if (!data.feed?.entry) return { news: [], totalResults };
+
+      const news = data.feed.entry.map((entry: any) => {
+        // Encontrar o link alternativo (link real da postagem)
+        const alternateLink = entry.link?.find((l: any) => l.rel === 'alternate')?.href || '#';
+        
+        // Tentar pegar a imagem da tag media$thumbnail ou extrair do conteúdo
+        let image = entry.media$thumbnail?.url || '';
+        // Ajustar tamanho da imagem do Blogger (de s72-c para um tamanho maior)
+        if (image) {
+          image = image.replace('/s72-c/', '/s1600/');
+        }
+
+        // Se não tiver thumbnail, tenta pegar a primeira imagem no conteúdo HTML
+        if (!image && entry.content?.$t) {
+          const imgMatch = entry.content.$t.match(/<img[^>]+src="([^">]+)"/);
+          if (imgMatch) image = imgMatch[1];
+        }
+
+        // Resumo: remove tags HTML e pega os primeiros 150 caracteres
+        const rawContent = entry.content?.$t || entry.summary?.$t || '';
+        const excerpt = rawContent
+          .replace(/<[^>]*>/g, '') // Remove HTML
+          .substring(0, 150) + '...';
+
+        const date = new Date(entry.published.$t);
+        const formattedDate = date.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+
+        return {
+          id: entry.id.$t,
+          title: entry.title.$t,
+          excerpt: excerpt,
+          image: image || 'https://placehold.co/600x400/0a0f1c/ffffff?text=Noticia',
+          date: formattedDate,
+          url: alternateLink,
+          category: entry.category?.[0]?.term || 'Geral'
+        };
+      });
+
+      return { news, totalResults };
+    } catch (e) {
+      console.error('NEWS_FETCH_ERROR:', e);
+      return { news: [], totalResults: 0 };
+    }
   }
 };

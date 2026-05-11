@@ -114,6 +114,45 @@ export default function SobrePage() {
           </section>
 
           <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
+            <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+              <i className="fa-solid fa-server text-blue-500"></i>
+              Nossas Fontes de Dados
+            </h2>
+            <p className="text-slate-400 mb-8 leading-relaxed">
+              O Anime House é alimentado pelas bases de dados mais robustas e confiáveis do mundo. Integramos múltiplas APIs para garantir metadados precisos, sinopses detalhadas e links oficiais:
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { name: 'AniList', url: 'https://anilist.co', icon: 'https://anilist.co/img/icons/icon.svg', desc: 'Metadados e Seasons' },
+                { name: 'MyAnimeList', url: 'https://myanimelist.net', icon: 'https://cdn.myanimelist.net/images/favicon.ico', desc: 'Streaming e Episódios' },
+                { name: 'Kitsu', url: 'https://kitsu.io', icon: 'https://kitsu.io/favicon.ico', desc: 'Sincronização Extra' },
+                { name: 'TMDB', url: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg', icon: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg', desc: 'Imagens e Cartazes' },
+              ].map((source) => (
+                <a 
+                  key={source.name}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center p-6 bg-slate-950/40 border border-white/5 rounded-2xl hover:border-blue-500/30 transition-all group"
+                >
+                  <img 
+                    src={source.icon} 
+                    alt={source.name} 
+                    className={`mb-4 object-contain transition-transform group-hover:scale-110 ${source.name === 'TMDB' ? 'h-4 w-auto mt-2 mb-6' : 'h-10 w-10'}`}
+                  />
+                  <span className="text-xs font-black uppercase tracking-widest text-white mb-1">
+                    {source.name}
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-500 uppercase">
+                    {source.desc}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
               <i className="fa-solid fa-question-circle text-blue-500"></i>
               Perguntas Frequentes
