@@ -13,7 +13,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CookieConsent from "@/components/layout/CookieConsent";
-import AuthHandler from "@/components/auth/AuthHandler";
+
 import { LibraryProvider } from "@/context/LibraryContext";
 import { Providers } from "@/components/Providers";
 
@@ -68,7 +68,7 @@ export default function RootLayout({
         <Providers>
           <LibraryProvider>
             <Suspense fallback={null}>
-              <AuthHandler />
+
             </Suspense>
             <Navbar />
             <main className="flex-grow pt-16">

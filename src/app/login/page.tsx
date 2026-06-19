@@ -8,21 +8,7 @@ import { motion } from 'framer-motion';
 export default function LoginPage() {
   const clientId = process.env.NEXT_PUBLIC_ANILIST_CLIENT_ID || '10978';
   const redirectUri = process.env.NEXT_PUBLIC_ANILIST_REDIRECT_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-  const anilistAuthUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
-  
-  useEffect(() => {
-    console.log('--- OAuth Debug Info ---');
-    console.log('AniList Client ID:', clientId);
-    console.log('AniList Redirect URI:', redirectUri);
-    console.log('AniList Auth URL:', anilistAuthUrl);
-    console.log('NextAuth URL:', process.env.NEXTAUTH_URL);
-    console.log('Current Origin:', window.location.origin);
-    console.log('------------------------');
 
-    if (redirectUri !== window.location.origin && !window.location.origin.includes('localhost')) {
-      console.warn('⚠️ Alerta: O Redirect URI no .env não coincide com a URL atual!');
-    }
-  }, [clientId, redirectUri, anilistAuthUrl]);
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#05080f]">
@@ -88,10 +74,10 @@ export default function LoginPage() {
             </motion.button>
 
             {/* AniList Button */}
-            <motion.a 
+            <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              href={anilistAuthUrl}
+              onClick={() => signIn('anilist', { callbackUrl: '/' })}
               className="w-full flex items-center justify-between px-8 py-5 bg-[#3b82f6] text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl hover:shadow-blue-600/20 group cursor-pointer"
             >
               <div className="flex items-center gap-4">
@@ -99,7 +85,7 @@ export default function LoginPage() {
                 <span>Entrar com AniList</span>
               </div>
               <i className="fa-solid fa-right-to-bracket opacity-30 group-hover:opacity-100 transition-opacity"></i>
-            </motion.a>
+            </motion.button>
 
             {/* Discord Placeholder */}
             <motion.button 

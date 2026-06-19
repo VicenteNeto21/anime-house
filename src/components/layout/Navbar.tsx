@@ -23,49 +23,15 @@ export default function Navbar() {
       setUser({
         name: session.user.name,
         avatar: { large: session.user.image || 'https://placehold.co/100x100/0a0f1c/ffffff?text=User' },
-        isGoogle: true
+        provider: (session as any).provider
       });
-      return;
-    }
-
-    const token = localStorage.getItem('anilist_token');
-    const cachedUser = localStorage.getItem('anilist_user');
-
-    if (cachedUser) {
-      try {
-        setUser(JSON.parse(cachedUser));
-      } catch (e) { }
-    }
-
-    if (token) {
-      AniListAPI.getCurrentUser(token)
-        .then(data => {
-          if (data?.Viewer) {
-            setUser(data.Viewer);
-            localStorage.setItem('anilist_user', JSON.stringify(data.Viewer));
-          } else {
-            localStorage.removeItem('anilist_token');
-            localStorage.removeItem('anilist_user');
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('anilist_token');
-          localStorage.removeItem('anilist_user');
-        });
     } else {
       setUser(null);
     }
   }, [session]);
 
   const handleLogout = async () => {
-    if (session) {
-      await signOut({ redirect: false });
-    }
-    localStorage.removeItem('anilist_token');
-    localStorage.removeItem('anilist_token_expiry');
-    localStorage.removeItem('anilist_user');
-    router.push('/');
-    router.refresh();
+    await signOut({ callbackUrl: '/' });
   };
 
   const getCurrentSeason = () => {

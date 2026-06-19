@@ -68,6 +68,8 @@ O projeto requer as seguintes chaves:
 - `NEXT_PUBLIC_ANILIST_REDIRECT_URL`: URL de retorno do login.
 - `ANILIST_CLIENT_SECRET`: Chave secreta (Server-side).
 - `NEXT_PUBLIC_TMDB_API_KEY`: Chave para busca de IDs no TMDB.
+- `MYANIMELIST_CLIENT_ID`: ID da aplicação no MyAnimeList.
+- `MYANIMELIST_CLIENT_SECRET`: Chave secreta do MyAnimeList (Server-side).
 
 ---
 
@@ -139,4 +141,3 @@ Abaixo estão os problemas identificados e as melhorias planejadas para o projet
 ---
 
 *Última atualização: Maio de 2026*
-

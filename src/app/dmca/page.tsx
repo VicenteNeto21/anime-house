@@ -33,10 +33,10 @@ export default function DMCAPage() {
               Natureza do Serviço
             </h2>
             <p className="mb-4">
-              O <strong>Anime House</strong> opera estritamente como um provedor de serviços de busca e indexação, conforme definido sob a Seção 512 do DMCA. Nossa plataforma funciona como um diretório técnico que organiza metadados e fornece hiperlinks para conteúdos hospedados em servidores de terceiros.
+              O <strong>Anime House</strong> opera estritamente como um portal de informações, notícias e guia de episódios, consumindo dados públicos fornecidos pela API do AniList. Nossa plataforma funciona como um catálogo organizador de metadados focados na cultura pop oriental.
             </p>
             <p className="text-slate-400 italic">
-              Ressaltamos: não realizamos upload, armazenamento ou transmissão de arquivos de vídeo em nossos próprios servidores. Toda e qualquer mídia é servida por plataformas externas independentes.
+              Ressaltamos: não realizamos upload, armazenamento, transmissão ou indexação de arquivos de vídeo protegidos por direitos autorais. Todos os links de "streaming" presentes na plataforma redirecionam única e exclusivamente para detentores de licenças oficiais (tais como Crunchyroll, Netflix, Amazon Prime Video, entre outros).
             </p>
           </section>
 

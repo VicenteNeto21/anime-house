@@ -16,7 +16,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
 
   return (
     <div className="flex flex-col min-h-screen pt-4">
-      {/* Top Highlights Grid - O Antigo "Header" */}
+      {/* Top Highlights Grid */}
       <section className="container mx-auto px-4 lg:px-8 mb-8">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
           {trending.map((anime, index) => (

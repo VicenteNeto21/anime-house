@@ -571,7 +571,7 @@ export const AniListAPI = {
                 icon: null,
                 color: null
               }));
-              
+
               // Merge sem duplicar por URL
               anime.externalLinks = [
                 ...(anime.externalLinks || []),
@@ -635,13 +635,13 @@ export const AniListAPI = {
       // Limpar HTML básico antes de traduzir
       const cleanText = text.replace(/<[^>]*>?/gm, '');
       const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(cleanText)}`;
-      
+
       const response = await fetch(url);
       if (!response.ok) return text;
-      
+
       const data = await response.json();
       if (!data || !data[0]) return text;
-      
+
       const translated = data[0].map((item: any) => item[0]).join('');
       return translated || text;
     } catch (error) {
@@ -908,7 +908,7 @@ export const MyAnimeListAPI = {
 
   async getMalDetails(malId: number) {
     if (!malId || typeof window !== 'undefined') return null;
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/anime/${malId}?fields=streaming,num_episodes`, {
         headers: {
@@ -918,7 +918,7 @@ export const MyAnimeListAPI = {
       });
 
       if (!response.ok) return null;
-      
+
       return await response.json();
     } catch (e) {
       console.error('MAL_DETAILS_ERROR:', e);
@@ -929,9 +929,8 @@ export const MyAnimeListAPI = {
 
 export const TMDBAPI = {
   async findIdByTitle(title: string) {
-    const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
     const cleanTitle = title.replace(/\(\d{4}\)/g, '').trim();
-    const url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}&language=pt-BR`;
+    const url = `/api/tmdb/search?query=${encodeURIComponent(cleanTitle)}`;
 
     try {
       const response = await fetch(url);
@@ -946,27 +945,15 @@ export const TMDBAPI = {
 };
 
 export const MeusAnimesAPI = {
-  baseUrl: 'https://meusanimes.blog',
-
   async search(query: string) {
-    const url = `${this.baseUrl}/?s=${encodeURIComponent(query)}`;
-    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-
     try {
-      const response = await fetch(proxyUrl);
-      const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      const items = doc.querySelectorAll('div.result-item');
-      return Array.from(items).map(item => {
-        const link = item.querySelector('.details .title a') as HTMLAnchorElement;
-        return {
-          title: link?.textContent?.trim(),
-          url: link?.href,
-          poster: item.querySelector('.image img')?.getAttribute('src')
-        };
+      const response = await fetch('/api/scraper/meusanimes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'search', query })
       });
+      if (!response.ok) return [];
+      return await response.json();
     } catch (e) {
       console.error('MEUSANIMES_SEARCH_ERROR:', e);
       return [];
@@ -974,23 +961,15 @@ export const MeusAnimesAPI = {
   },
 
   async getEpisodeIframe(animeUrl: string, episode: number, isDubbed: boolean) {
-    let slug = animeUrl.split('/').filter(Boolean).pop() || '';
-    slug = slug.replace(/^anime-/, '');
-
-    const season = 1;
-    const versionSuffix = isDubbed ? '-dublado' : '';
-    const epUrl = `${this.baseUrl}/e/${slug}${versionSuffix}-${season}-episodio-${episode}/`;
-
-    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(epUrl)}`;
-
     try {
-      const response = await fetch(proxyUrl);
-      const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      const iframe = doc.querySelector('iframe[src*="meusdoramas"]') as HTMLIFrameElement;
-      return iframe ? iframe.src : null;
+      const response = await fetch('/api/scraper/meusanimes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getIframe', animeUrl, episode, isDubbed })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.iframe;
     } catch (e) {
       console.error('MEUSANIMES_IFRAME_ERROR:', e);
       return null;
@@ -1017,14 +996,14 @@ export const NewsAPI = {
     try {
       const response = await fetch(url, { next: { revalidate: 3600 } });
       const data = await response.json();
-      
+
       const totalResults = parseInt(data.feed?.openSearch$totalResults?.$t || '0');
       if (!data.feed?.entry) return { news: [], totalResults };
 
       const news = data.feed.entry.map((entry: any) => {
         // Encontrar o link alternativo (link real da postagem)
         const alternateLink = entry.link?.find((l: any) => l.rel === 'alternate')?.href || '#';
-        
+
         // Tentar pegar a imagem da tag media$thumbnail ou extrair do conteúdo
         let image = entry.media$thumbnail?.url || '';
         // Ajustar tamanho da imagem do Blogger (de s72-c para um tamanho maior)

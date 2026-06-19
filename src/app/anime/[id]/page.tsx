@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!anime) return { title: 'Anime não encontrado | Anime House' };
 
   return {
-    title: `${anime.title} - Assistir Online Grátis | Anime House`,
-    description: `Assista ${anime.title} online em HD. ${anime.description?.substring(0, 150).replace(/<[^>]*>/g, '')}... Confira sinopse, elenco, equipe técnica e muito mais no melhor portal de animes.`,
+    title: `${anime.title} - Guia de Episódios e Informações | Anime House`,
+    description: `Tudo sobre ${anime.title}. ${anime.description?.substring(0, 150).replace(/<[^>]*>/g, '')}... Confira sinopse, guia de episódios, elenco, equipe técnica e muito mais no melhor portal de animes.`,
     openGraph: {
       title: anime.title,
       description: anime.description?.substring(0, 160).replace(/<[^>]*>/g, ''),
@@ -66,7 +66,7 @@ export default async function AnimeDetailsPage({
     <div className="flex flex-col min-h-screen bg-slate-950">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       {/* Hero Banner Section */}
       {/* Hero Banner Section */}
@@ -122,8 +122,8 @@ export default async function AnimeDetailsPage({
                   href={`/player/${anime.id}-${AniListAPI.slugify(anime.title)}/1`}
                   className="flex-grow sm:flex-grow-0 h-14 flex items-center justify-center gap-3 px-10 bg-blue-600 hover:bg-blue-500 rounded-2xl text-white font-black uppercase text-xs tracking-widest transition-all hover:scale-105 active:scale-95"
                 >
-                  <i className="fa-solid fa-play"></i>
-                  Assistir Agora
+                  <i className="fa-solid fa-list"></i>
+                  Guia de Episódios
                 </Link>
 
                 {anime.trailer?.site === 'youtube' && (
@@ -236,82 +236,83 @@ export default async function AnimeDetailsPage({
                 )}
               </div>
 
-              {/* Official Streaming Platforms Section */}
-              <div className="mt-8 pt-8 border-t border-white/5">
-                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <i className="fa-solid fa-tv text-blue-500"></i>
-                  Assista Oficialmente
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Links Dinâmicos do AniList (Reais) */}
-                  {anime.externalLinks && anime.externalLinks.length > 0 && 
-                    anime.externalLinks
-                      .filter(link => link.type === 'STREAMING' || link.site.toLowerCase().includes('site'))
-                      .slice(0, 6)
-                      .map((link) => (
-                        <a 
-                          key={link.url}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:bg-blue-500/20 hover:border-blue-500/40 transition-all group"
-                          title={`Ver ${link.site}`}
-                        >
-                          <img 
-                            src={link.icon || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=64`} 
-                            alt={link.site} 
-                            className="w-4 h-4 rounded-sm" 
-                          />
-                          <span className="text-[9px] font-black text-blue-200 group-hover:text-white uppercase truncate">
-                            {link.site}
-                          </span>
-                        </a>
-                      ))
-                  }
-
-                  {/* Fallback/Principais (Garantia) */}
-                  {[
-                    { name: 'Crunchyroll', url: 'https://crunchyroll.com', domain: 'crunchyroll.com' },
-                    { name: 'Netflix', url: 'https://netflix.com', domain: 'netflix.com' },
-                    { name: 'Disney+', url: 'https://disneyplus.com', domain: 'disneyplus.com' },
-                    { name: 'Prime Video', url: 'https://primevideo.com', domain: 'primevideo.com' },
-                  ].map((platform) => {
-                    // Evita duplicar se o AniList já trouxe
-                    if (anime.externalLinks?.some(l => l.url.includes(platform.domain))) return null;
-                    
-                    const directLink = anime.streamingEpisodes?.find(ep => ep.url.includes(platform.domain))?.url || platform.url;
-                    
-                    return (
-                      <a 
-                        key={platform.name}
-                        href={directLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 bg-slate-800/40 border border-white/5 rounded-xl hover:bg-slate-800 hover:border-blue-500/30 transition-all group"
-                        title={`Assistir na ${platform.name}`}
-                      >
-                        <img 
-                          src={`https://www.google.com/s2/favicons?domain=${platform.domain}&sz=64`} 
-                          alt={platform.name} 
-                          className="w-4 h-4 rounded-sm" 
-                        />
-                        <span className="text-[9px] font-black text-slate-400 group-hover:text-white uppercase truncate">
-                          {platform.name}
-                        </span>
-                      </a>
-                    );
-                  })}
-                </div>
-                <p className="mt-4 text-[9px] text-slate-500 font-medium italic leading-tight">
-                  Apoie a indústria oficial assistindo em plataformas licenciadas.
-                </p>
-              </div>
             </div>
           </div>
 
           {/* Main Content (Agora na Direita) */}
           <div className="order-1 lg:order-2 lg:col-span-3 space-y-16">
             
+            {/* 0. Official Streaming Platforms Section (Destacado no Topo) */}
+            <section id="official-streams" className="bg-slate-900/40 border border-white/5 rounded-3xl p-6 md:p-8">
+              <h3 className="text-xl font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
+                <i className="fa-solid fa-tv text-blue-500 text-2xl"></i>
+                Assista Oficialmente
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {/* Links Dinâmicos do AniList (Reais) */}
+                {anime.externalLinks && anime.externalLinks.length > 0 && 
+                  anime.externalLinks
+                    .filter(link => link.type === 'STREAMING' || link.site.toLowerCase().includes('site'))
+                    .slice(0, 8)
+                    .map((link) => (
+                      <a 
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-4 bg-blue-900/20 border border-blue-500/20 rounded-2xl hover:bg-blue-600/30 hover:border-blue-500/50 transition-all group shadow-lg"
+                        title={`Ver ${link.site}`}
+                      >
+                        <img 
+                          src={link.icon || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=64`} 
+                          alt={link.site} 
+                          className="w-6 h-6 rounded-md bg-white/10" 
+                        />
+                        <span className="text-xs font-black text-blue-100 group-hover:text-white uppercase truncate">
+                          {link.site}
+                        </span>
+                      </a>
+                    ))
+                }
+
+                {/* Fallback/Principais (Garantia) */}
+                {[
+                  { name: 'Crunchyroll', url: 'https://crunchyroll.com', domain: 'crunchyroll.com' },
+                  { name: 'Netflix', url: 'https://netflix.com', domain: 'netflix.com' },
+                  { name: 'Disney+', url: 'https://disneyplus.com', domain: 'disneyplus.com' },
+                  { name: 'Prime Video', url: 'https://primevideo.com', domain: 'primevideo.com' },
+                ].map((platform) => {
+                  // Evita duplicar se o AniList já trouxe
+                  if (anime.externalLinks?.some(l => l.url.includes(platform.domain))) return null;
+                  
+                  const directLink = anime.streamingEpisodes?.find(ep => ep.url.includes(platform.domain))?.url || platform.url;
+                  
+                  return (
+                    <a 
+                      key={platform.name}
+                      href={directLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 bg-slate-800/40 border border-white/5 rounded-2xl hover:bg-slate-700 hover:border-blue-500/30 transition-all group shadow-lg"
+                      title={`Assistir na ${platform.name}`}
+                    >
+                      <img 
+                        src={`https://www.google.com/s2/favicons?domain=${platform.domain}&sz=64`} 
+                        alt={platform.name} 
+                        className="w-6 h-6 rounded-md bg-white/5" 
+                      />
+                      <span className="text-xs font-black text-slate-300 group-hover:text-white uppercase truncate">
+                        {platform.name}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+              <p className="mt-6 text-sm text-slate-500 font-medium italic leading-relaxed border-t border-white/5 pt-4">
+                Apoie a indústria oficial assistindo em plataformas licenciadas.
+              </p>
+            </section>
+
             {/* 1. Episodes List (Primeiro) */}
             <section id="episodes">
               <div className="flex items-center justify-between mb-8">
