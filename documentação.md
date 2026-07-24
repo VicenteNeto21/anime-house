@@ -53,12 +53,13 @@ src/
 ### **TMDB API**
 Usada como ponte para encontrar IDs de mídia que alguns servidores de vídeo exigem (como BetterFlix).
 
-### **Sistema de Player (Servidores)**
-O projeto não hospeda vídeos. Ele resolve URLs de fontes externas em tempo real:
-1. **Direto (AniPlay):** Tenta montar a URL baseada no título e episódio.
-2. **Feral/Pixel:** Servidores MP4 de alta velocidade.
-3. **Anroll:** Utiliza scraping dinâmico para obter iframes.
-4. **BetterFlix:** Provedor externo via ID do TMDB.
+### **Sistema de Player (Servidores de Embed)**
+O projeto não hospeda vídeos. Ele utiliza APIs de embed externas que requerem o TMDB ID do anime:
+
+1. **EmbedPlay (Padrão):** `embedplayapi.top/embed/{TMDB_ID}/{SEASON}/{EPISODE}` — Player principal.
+2. **Fembed:** `fembed.sx/e/{TMDB_ID}/{SEASON}-{EPISODE}` — Suporta múltiplos servidores (Principal, SuperFlix, MyEmbed, English) e seleção de áudio (Dublado/Legendado).
+
+**Fluxo:** AniList ID → Busca título no TMDB → Obtém TMDB ID → Gera URLs de embed.
 
 ---
 
