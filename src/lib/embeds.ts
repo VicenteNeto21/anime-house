@@ -10,7 +10,7 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz';
+  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz' | 'warezcdn';
   url: string;
   server?: string;
   audioLabel?: string;
@@ -60,6 +60,18 @@ export const XYZAPI = {
   },
   getMovieUrl(tmdbId: string | number): string {
     return `https://1298009.xyz/filme/${tmdbId}`;
+  }
+};
+
+// ─────────────────────────────────────────────
+// WarezCDN API (embed.warezcdn.net)
+// ─────────────────────────────────────────────
+export const WarezCDNAPI = {
+  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
+    return `https://embed.warezcdn.net/serie/${tmdbId}/${season}/${episode}`;
+  },
+  getMovieUrl(tmdbId: string | number): string {
+    return `https://embed.warezcdn.net/filme/${tmdbId}`;
   }
 };
 
@@ -271,6 +283,15 @@ export function getEmbedSources(
     type: 'iframe',
   });
 
+  // 4.5. WarezCDN
+  sources.push({
+    id: 'warezcdn',
+    name: 'WarezCDN (Dub/Leg)',
+    provider: 'warezcdn',
+    url: WarezCDNAPI.getEpisodeUrl(tmdbId, season, episode),
+    type: 'iframe',
+  });
+
   // 5. Anroll (Async) - Desativado (API backend não implementada)
   /*
   if (slug) {
@@ -376,6 +397,15 @@ export function getMovieEmbedSources(
     name: 'Player Alternativo',
     provider: 'xyz',
     url: XYZAPI.getMovieUrl(tmdbId),
+    type: 'iframe',
+  });
+
+  // 4.5. WarezCDN
+  sources.push({
+    id: 'warezcdn',
+    name: 'WarezCDN (Dub/Leg)',
+    provider: 'warezcdn',
+    url: WarezCDNAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
 
