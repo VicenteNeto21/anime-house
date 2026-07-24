@@ -54,12 +54,19 @@ src/
 Usada como ponte para encontrar IDs de mídia que alguns servidores de vídeo exigem (como BetterFlix).
 
 ### **Sistema de Player (Servidores de Embed)**
-O projeto não hospeda vídeos. Ele utiliza APIs de embed externas que requerem o TMDB ID do anime:
+O projeto não hospeda vídeos. Ele utiliza APIs de embed externas que requerem o TMDB ID ou Slug do anime:
 
 1. **EmbedPlay (Padrão):** `embedplayapi.top/embed/{TMDB_ID}/{SEASON}/{EPISODE}` — Player principal.
 2. **Fembed:** `fembed.sx/e/{TMDB_ID}/{SEASON}-{EPISODE}` — Suporta múltiplos servidores (Principal, SuperFlix, MyEmbed, English) e seleção de áudio (Dublado/Legendado).
+3. **MeusAnimes (DooPlay Extractor):** Extrai dinamicamente vídeos de sites WordPress baseados no tema DooPlay. 
 
-**Fluxo:** AniList ID → Busca título no TMDB → Obtém TMDB ID → Gera URLs de embed.
+**Microserviço Extrator (Python):**
+Para burlar proteções avançadas (como Cloudflare Turnstile e Nonces do WordPress), o sistema inclui um microserviço em Python localizado na pasta `/extractor`.
+- **Tecnologia:** FastAPI, Playwright (Stealth), BeautifulSoup, SQLite (Cache).
+- **Funcionamento:** Ele intercepta a rede de forma invisível bloqueando anúncios, simula cliques humanos para liberar iframes ofuscados e devolve a URL final limpa para o front-end em milissegundos.
+- **Rota Next.js:** `/api/extractor/dooplay`.
+
+**Fluxo Tradicional:** AniList ID → Busca título no TMDB → Obtém TMDB ID → Gera URLs de embed.
 
 ---
 
@@ -75,6 +82,8 @@ O projeto requer as seguintes chaves:
 ---
 
 ## ⚡ 6. Comandos Disponíveis
+- `iniciar-servidor.bat`: (Windows) Inicia o servidor Next.js na porta 3000.
+- `iniciar-extrator.bat`: (Windows) Inicia o microserviço Python FastAPI na porta 8000 para extração de vídeos avançada.
 - `npm run dev`: Inicia o servidor de desenvolvimento em `localhost:3000`.
 - `npm run build`: Gera a build de produção otimizada.
 - `npm run start`: Inicia o servidor de produção.
@@ -141,4 +150,4 @@ Abaixo estão os problemas identificados e as melhorias planejadas para o projet
 
 ---
 
-*Última atualização: Maio de 2026*
+*Última atualização: Julho de 2026*
