@@ -167,7 +167,7 @@ export function getEmbedSources(
       id: 'meusanimes',
       name: 'MeusAnimes (DooPlay)',
       provider: 'meusanimes',
-      url: `/api/extractor/dooplay?url=https://meusanimes.blog/e/${slug}-${ep}/`,
+      url: `/api/extractor/dooplay?url=https://meusanimes.blog/e/${slug}-${episode}/`,
       type: 'iframe',
       isAsync: true,
     });

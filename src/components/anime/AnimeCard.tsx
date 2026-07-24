@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Anime } from '@/lib/api';
 import { useLibrary } from '@/context/LibraryContext';
+import { dubbedAnimeIds } from '@/lib/dubs';
 
 interface AnimeCardProps {
   anime: Anime;
@@ -23,6 +24,7 @@ export default function AnimeCard({ anime, priority = false }: AnimeCardProps) {
   const { isInLibrary } = useLibrary();
   const libraryItem = isInLibrary(Number(anime.id));
   const statusInfo = libraryItem ? STATUS_CONFIG[libraryItem.status] : null;
+  const isDubbed = dubbedAnimeIds.includes(Number(anime.id)) || dubbedAnimeIds.includes(String(anime.id));
 
   return (
     <Link href={`/anime/${anime.id}`} className="group relative aspect-[2/3] overflow-hidden rounded-xl bg-slate-900 border border-white/5 hover:border-blue-500/30 transition-all duration-300">
@@ -47,8 +49,13 @@ export default function AnimeCard({ anime, priority = false }: AnimeCardProps) {
           </span>
         )}
         <div className="flex gap-1">
+          {isDubbed && (
+            <span className="px-1.5 py-0.5 bg-slate-900/90 text-[8px] font-black rounded text-amber-500 uppercase border border-amber-500/30 backdrop-blur-sm flex items-center gap-1 shadow-lg shadow-black/50" title="Possui Dublagem">
+              <i className="fa-solid fa-microphone text-[7px]" /> DUB
+            </span>
+          )}
           {anime.currentEpisode && (
-            <span className="px-1.5 py-0.5 bg-blue-600 text-[8px] font-black rounded text-white uppercase">
+            <span className="px-1.5 py-0.5 bg-blue-600 text-[8px] font-black rounded text-white uppercase shadow-lg shadow-black/50">
               Ep {anime.currentEpisode}
             </span>
           )}
