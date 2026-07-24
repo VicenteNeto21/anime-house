@@ -80,10 +80,10 @@ export const WarezCDNAPI = {
 // ─────────────────────────────────────────────
 export const VidsrcAPI = {
   getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://vidsrc-embed.ru/embed/tv/${tmdbId}/${season}-${episode}?ds_lang=pt`;
+    return `https://vsembed.su/embed/tv/${tmdbId}/${season}-${episode}?ds_lang=pt`;
   },
   getMovieUrl(tmdbId: string | number): string {
-    return `https://vidsrc-embed.ru/embed/movie/${tmdbId}?ds_lang=pt`;
+    return `https://vsembed.su/embed/movie/${tmdbId}?ds_lang=pt`;
   }
 };
 
