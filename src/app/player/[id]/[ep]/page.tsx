@@ -9,6 +9,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import CustomVideoPlayer from '@/components/player/CustomVideoPlayer';
+import { AniSkipAPI, SkipTime } from '@/lib/aniskip';
 
 export default function PlayerPage() {
   const params = useParams();
@@ -33,6 +35,7 @@ export default function PlayerPage() {
   const [iframeKey, setIframeKey] = useState(0);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [aniskip, setAniskip] = useState<SkipTime[]>([]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const serverMenuRef = useRef<HTMLDivElement>(null);
@@ -111,6 +114,35 @@ export default function PlayerPage() {
     );
   }, [anime, currentEp, tmdbId]);
 
+  // AniList Sync
+  useEffect(() => {
+    if (!anime) return;
+    const syncAniList = async () => {
+      const token = localStorage.getItem('anilist_token');
+      if (token) {
+        const status = await AniListAPI.getMediaListStatus(Number(anime.id), token);
+        const isCompleted = status?.status === 'COMPLETED';
+        const currentProgress = status?.progress || 0;
+        
+        if (!isCompleted && currentEp > currentProgress) {
+          await AniListAPI.saveMediaListEntry(Number(anime.id), 'CURRENT', currentEp, token);
+          window.dispatchEvent(new Event('anilist-sync'));
+        }
+      }
+    };
+    syncAniList();
+  }, [anime, currentEp]);
+
+  // AniSkip Fetch
+  useEffect(() => {
+    if (!anime?.malId) return;
+    const loadSkipTimes = async () => {
+      const times = await AniSkipAPI.getSkipTimes(anime.malId!, currentEp);
+      setAniskip(times);
+    };
+    loadSkipTimes();
+  }, [anime, currentEp]);
+
   // 5. Close server menu on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -131,6 +163,12 @@ export default function PlayerPage() {
   const hasPrev = currentEp > 1;
   const hasNext = currentEp < totalEps;
   const goToEp = (ep: number) => router.push(`/player/${id}/${ep}`);
+
+  const handleVideoEnded = () => {
+    if (hasNext) {
+      goToEp(currentEp + 1);
+    }
+  };
 
   // Handle audio change
   const handleAudioChange = (newAudio: AudioOption) => {
@@ -278,14 +316,13 @@ export default function PlayerPage() {
                   <p>Vídeo indisponível neste servidor. Por favor, tente outro.</p>
                 </div>
               ) : currentSource?.type === 'video' ? (
-                <video
+                <CustomVideoPlayer
                   key={iframeKey}
-                  src={currentUrl}
-                  controls
-                  autoPlay
-                  className="absolute inset-0 w-full h-full object-contain bg-black"
-                  controlsList="nodownload"
+                  url={currentUrl}
                   title={`${anime.title} - Episódio ${currentEp}`}
+                  poster={anime.banner || anime.poster}
+                  onEnded={handleVideoEnded}
+                  aniskip={aniskip}
                 />
               ) : (
                 <iframe
