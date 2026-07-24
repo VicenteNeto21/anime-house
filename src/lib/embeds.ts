@@ -10,7 +10,7 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes';
+  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix';
   url: string;
   server?: string;
   audioLabel?: string;
@@ -36,6 +36,18 @@ export const SuperEmbedAPI = {
   },
   getMovieUrl(tmdbId: string | number): string {
     return `https://multiembed.mov/directstream.php?video_id=${tmdbId}&tmdb=1`;
+  }
+};
+
+// ─────────────────────────────────────────────
+// SuperFlix API
+// ─────────────────────────────────────────────
+export const SuperFlixAPI = {
+  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
+    return `https://superflixapi.pro/serie/${tmdbId}/${season}/${episode}`;
+  },
+  getMovieUrl(tmdbId: string | number): string {
+    return `https://superflixapi.pro/filme/${tmdbId}`;
   }
 };
 
@@ -229,6 +241,15 @@ export function getEmbedSources(
     type: 'iframe',
   });
 
+  // 4.3. SuperFlix
+  sources.push({
+    id: 'superflix',
+    name: 'SuperFlix (VIP)',
+    provider: 'superflix',
+    url: SuperFlixAPI.getEpisodeUrl(tmdbId, season, episode),
+    type: 'iframe',
+  });
+
   // 5. Anroll (Async) - Desativado (API backend não implementada)
   /*
   if (slug) {
@@ -316,6 +337,15 @@ export function getMovieEmbedSources(
     name: 'Player Ultra',
     provider: 'superembed',
     url: SuperEmbedAPI.getMovieUrl(tmdbId),
+    type: 'iframe',
+  });
+
+  // 4.3. SuperFlix
+  sources.push({
+    id: 'superflix',
+    name: 'SuperFlix (VIP)',
+    provider: 'superflix',
+    url: SuperFlixAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
 
