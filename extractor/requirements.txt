@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+playwright
+playwright-stealth
+beautifulsoup4
+pydantic

@@ -10,7 +10,7 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed';
+  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes';
   url: string;
   server?: string;
   audioLabel?: string;
@@ -160,6 +160,18 @@ export function getEmbedSources(
   slug?: string
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
+
+  // 0. MeusAnimes (DooPlay Extractor)
+  if (slug) {
+    sources.push({
+      id: 'meusanimes',
+      name: 'MeusAnimes (DooPlay)',
+      provider: 'meusanimes',
+      url: `/api/extractor/dooplay?url=https://meusanimes.blog/e/${slug}-${ep}/`,
+      type: 'iframe',
+      isAsync: true,
+    });
+  }
 
   // 1. EmbedPlay (fonte principal)
   sources.push({
