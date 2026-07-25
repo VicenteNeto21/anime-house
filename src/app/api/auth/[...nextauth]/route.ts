@@ -13,11 +13,29 @@ const handler = NextAuth({
       id: "anilist",
       name: "AniList",
       type: "oauth",
-      token: "https://anilist.co/api/v2/oauth/token",
-      authorization: "https://anilist.co/api/v2/oauth/authorize?response_type=code",
-      client: {
-        token_endpoint_auth_method: "client_secret_post",
+      token: {
+        url: "https://anilist.co/api/v2/oauth/token",
+        async request(context) {
+          const response = await fetch("https://anilist.co/api/v2/oauth/token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              grant_type: "authorization_code",
+              client_id: context.provider.clientId,
+              client_secret: context.provider.clientSecret,
+              redirect_uri: context.provider.callbackUrl,
+              code: context.params.code,
+            }),
+          });
+          const tokens = await response.json();
+          if (!response.ok) throw new Error(JSON.stringify(tokens));
+          return { tokens };
+        },
       },
+      authorization: "https://anilist.co/api/v2/oauth/authorize?response_type=code",
       userinfo: {
         url: "https://graphql.anilist.co",
         async request({ tokens }) {
