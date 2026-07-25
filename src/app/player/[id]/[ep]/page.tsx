@@ -332,7 +332,7 @@ export default function PlayerPage() {
                   className="absolute inset-0 w-full h-full"
                   allowFullScreen
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   title={`${anime.title} - Episódio ${currentEp}`}
                 />
               )}
