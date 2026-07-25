@@ -149,11 +149,7 @@ export default function Navbar() {
                   </>
                 )}
               </div>
-            ) : (
-              <Link href="/login" className="px-3.5 md:px-6 py-2 md:py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[8px] md:text-[10px] font-black rounded-xl transition-all uppercase tracking-widest cursor-pointer active:scale-95 whitespace-nowrap">
-                Entrar
-              </Link>
-            )}
+            ) : null}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

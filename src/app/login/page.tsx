@@ -73,7 +73,19 @@ export default function LoginPage() {
               <i className="fa-solid fa-right-to-bracket opacity-30 group-hover:opacity-100 transition-opacity"></i>
             </motion.button>
 
-
+            {/* AniList Button */}
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => signIn('anilist', { callbackUrl: '/' })}
+              className="w-full flex items-center justify-between px-8 py-5 bg-[#3b82f6] text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl hover:shadow-blue-600/20 group cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <i className="fa-solid fa-circle-dot text-lg"></i>
+                <span>Entrar com AniList</span>
+              </div>
+              <i className="fa-solid fa-right-to-bracket opacity-30 group-hover:opacity-100 transition-opacity"></i>
+            </motion.button>
 
             {/* Discord Placeholder */}
             <motion.button 
