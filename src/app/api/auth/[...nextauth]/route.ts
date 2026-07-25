@@ -35,7 +35,10 @@ const handler = NextAuth({
           return { tokens };
         },
       },
-      authorization: "https://anilist.co/api/v2/oauth/authorize?response_type=code",
+      authorization: {
+        url: "https://anilist.co/api/v2/oauth/authorize",
+        params: { response_type: "code", scope: "read" },
+      },
       userinfo: {
         url: "https://graphql.anilist.co",
         async request({ tokens }) {
