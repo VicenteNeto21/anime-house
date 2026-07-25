@@ -14,10 +14,7 @@ const handler = NextAuth({
       name: "AniList",
       type: "oauth",
       token: "https://anilist.co/api/v2/oauth/token",
-      authorization: {
-        url: "https://anilist.co/api/v2/oauth/authorize",
-        params: { scope: "", response_type: "code" },
-      },
+      authorization: "https://anilist.co/api/v2/oauth/authorize?response_type=code",
       client: {
         token_endpoint_auth_method: "client_secret_post",
       },
