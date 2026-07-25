@@ -31,8 +31,8 @@ const archivoBlack = Archivo_Black({
 });
 
 export const metadata: Metadata = {
-  title: "Anime House - Assista Animes Online em Full HD",
-  description: "A melhor plataforma para você assistir seus animes favoritos em alta definição com a melhor experiência otaku.",
+  title: "Anime House - Catálogo, Notícias e Guia de Episódios",
+  description: "O seu portal definitivo para organizar, descobrir e acompanhar as melhores obras da cultura pop.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
