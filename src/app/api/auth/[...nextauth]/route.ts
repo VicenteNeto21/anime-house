@@ -18,6 +18,9 @@ const handler = NextAuth({
         url: "https://anilist.co/api/v2/oauth/authorize",
         params: { scope: "", response_type: "code" },
       },
+      client: {
+        token_endpoint_auth_method: "client_secret_post",
+      },
       userinfo: {
         url: "https://graphql.anilist.co",
         async request({ tokens }) {
