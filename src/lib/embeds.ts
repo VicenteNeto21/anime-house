@@ -247,7 +247,8 @@ export function getEmbedSources(
     type: 'iframe',
   });
 
-  // 4.1. AutoEmbed
+  // 4.1. AutoEmbed (Desativado - API offline)
+  /*
   sources.push({
     id: 'autoembed',
     name: 'Player Secundário',
@@ -255,6 +256,7 @@ export function getEmbedSources(
     url: AutoEmbedAPI.getEpisodeUrl(tmdbId, season, episode),
     type: 'iframe',
   });
+  */
 
   // 4.2. SuperEmbed
   sources.push({
@@ -283,7 +285,8 @@ export function getEmbedSources(
     type: 'iframe',
   });
 
-  // 4.5. WarezCDN
+  // 4.5. WarezCDN (Desativado - API offline)
+  /*
   sources.push({
     id: 'warezcdn',
     name: 'WarezCDN (Dub/Leg)',
@@ -291,6 +294,7 @@ export function getEmbedSources(
     url: WarezCDNAPI.getEpisodeUrl(tmdbId, season, episode),
     type: 'iframe',
   });
+  */
 
   // 5. Anroll (Async) - Desativado (API backend não implementada)
   /*
@@ -364,7 +368,8 @@ export function getMovieEmbedSources(
     type: 'iframe',
   });
 
-  // 4.1. AutoEmbed
+  // 4.1. AutoEmbed (Desativado - API offline)
+  /*
   sources.push({
     id: 'autoembed',
     name: 'Player Secundário',
@@ -372,6 +377,7 @@ export function getMovieEmbedSources(
     url: AutoEmbedAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
+  */
 
   // 4.2. SuperEmbed
   sources.push({
@@ -400,7 +406,8 @@ export function getMovieEmbedSources(
     type: 'iframe',
   });
 
-  // 4.5. WarezCDN
+  // 4.5. WarezCDN (Desativado - API offline)
+  /*
   sources.push({
     id: 'warezcdn',
     name: 'WarezCDN (Dub/Leg)',
@@ -408,6 +415,7 @@ export function getMovieEmbedSources(
     url: WarezCDNAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
+  */
 
   return sources;
 }
