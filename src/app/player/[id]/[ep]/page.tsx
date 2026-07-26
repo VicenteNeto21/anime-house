@@ -257,11 +257,13 @@ export default function PlayerPage() {
     <div className="flex flex-col min-h-screen bg-[#05080f]">
       {/* Background Banner (subtle) */}
       <div className="absolute top-0 left-0 w-full h-[40vh] opacity-10 pointer-events-none overflow-hidden">
-        <img
+        <Image
           src={anime.banner || anime.poster}
           alt=""
-          className="w-full h-full object-cover blur-3xl scale-110"
+          fill
           aria-hidden="true"
+          unoptimized
+          className="object-cover blur-3xl scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#05080f]/50 via-[#05080f] to-[#05080f]" />
       </div>
@@ -532,10 +534,13 @@ export default function PlayerPage() {
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-slate-800/50 hover:bg-blue-600/10 border border-white/5 hover:border-blue-500/30 text-[9px] font-bold text-slate-400 hover:text-white rounded-xl flex items-center gap-2 transition-all"
                       >
-                        <img
+                        <Image
                           src={link.icon || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=32`}
                           alt={link.site}
-                          className="w-4 h-4 rounded"
+                          width={16}
+                          height={16}
+                          unoptimized
+                          className="rounded"
                         />
                         {link.site}
                         <i className="fa-solid fa-arrow-up-right-from-square text-[7px] opacity-40" />

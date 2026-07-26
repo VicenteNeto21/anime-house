@@ -20,8 +20,11 @@ echo.
 echo Pressione Ctrl+C para encerrar o servidor.
 echo.
 
-REM Aguarda 3 segundos em background e abre o navegador
-start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:3000"
+REM Aguarda 5 segundos para dar tempo ao servidor de iniciar e abre o navegador.
+REM O comando start "" /b executa em background sem abrir uma nova janela de console.
+start "" /b cmd /c "timeout /t 5 /nobreak >nul && start http://localhost:3000"
 
-REM Inicia o servidor (silencioso, sem logs para não pesar)
-call npm run dev > nul 2>&1
+REM Inicia o servidor e mostra os logs. Eles são essenciais para o desenvolvimento.
+call npm run dev
+
+pause

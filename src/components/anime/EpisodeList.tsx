@@ -13,6 +13,7 @@ interface EpisodeListProps {
   animeId: number;
   animeTitle: string;
   totalEpisodes: number;
+  animePoster?: string;
   streamingEpisodes?: {
     title: string;
     thumbnail: string;
@@ -20,7 +21,7 @@ interface EpisodeListProps {
   }[];
 }
 
-export default function EpisodeList({ animeId, animeTitle, totalEpisodes, streamingEpisodes }: EpisodeListProps) {
+export default function EpisodeList({ animeId, animeTitle, totalEpisodes, animePoster, streamingEpisodes }: EpisodeListProps) {
   const { isInLibrary } = useLibrary();
   const libraryItem = isInLibrary(animeId);
   
@@ -72,12 +73,19 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, stream
               {/* Thumbnail */}
               <div className="relative w-28 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-slate-800">
                 <Image
-                  src={epData?.thumbnail || 'https://placehold.co/600x400/0f172a/white?text=EP'}
+                  src={epData?.thumbnail || animePoster || ''}
                   alt={`Episódio ${epNum}`}
                   fill
+                  unoptimized={!!epData?.thumbnail} // thumbnails do Crunchyroll vêm de CDN externo
                   className="object-cover group-hover:scale-110 transition-transform duration-500 brightness-90 group-hover:brightness-100"
                   sizes="112px"
                 />
+                {/* Overlay do número do episódio quando é o poster (sem thumbnail) */}
+                {!epData?.thumbnail && (
+                  <div className="absolute inset-0 flex items-end p-1.5 bg-gradient-to-t from-black/80 to-transparent">
+                    <span className="text-[9px] font-black text-white/60 uppercase">EP {epNum}</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                   <i className="fa-solid fa-play text-white text-xs"></i>
                 </div>

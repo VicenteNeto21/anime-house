@@ -52,24 +52,25 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
+        {/* Preconnect para reduzir latência de handshake */}
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://graphql.anilist.co" />
+        {/* FontAwesome — preload para evitar flash de ícones sem estilo */}
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          crossOrigin="anonymous"
+        />
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9879597043409013"
           crossOrigin="anonymous"
         ></script>
-        <link 
-          rel="stylesheet" 
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
-          crossOrigin="anonymous" 
-          referrerPolicy="no-referrer" 
-        />
       </head>
       <body className={`${sora.variable} ${archivoBlack.variable} min-h-screen flex flex-col`}>
         <Providers>
           <LibraryProvider>
-            <Suspense fallback={null}>
-
-            </Suspense>
             <Navbar />
             <main className="flex-grow pt-16">
               {children}

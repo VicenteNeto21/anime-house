@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { AniListAPI } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 const GENRE_MAP: { [key: string]: { label: string, color: string } } = {
   'Action': { label: 'Ação', color: 'bg-rose-500' },
@@ -255,7 +256,7 @@ export default function ProfilePage() {
       {/* Banner */}
       <div className="relative h-72 md:h-96 w-full overflow-hidden">
         {user.bannerImage ? (
-          <img src={user.bannerImage} alt="Banner" className="w-full h-full object-cover opacity-30 brightness-50" />
+          <Image src={user.bannerImage} alt="Banner" fill priority className="object-cover opacity-30 brightness-50" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blue-900/30 via-slate-900 to-indigo-900/30" />
         )}
@@ -272,7 +273,7 @@ export default function ProfilePage() {
               <div className="absolute -top-10 -right-10 w-24 h-24 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-colors"></div>
               
               <div className="relative w-32 h-32 mx-auto rounded-2xl overflow-hidden border-2 border-white/5 mb-6 group-hover:scale-105 transition-transform duration-500">
-                <img src={user.avatar.large} alt={user.name} className="w-full h-full object-cover" />
+                <Image src={user.avatar.large} alt={user.name} fill className="object-cover" sizes="128px" />
               </div>
               
               <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 leading-none">{user.name}</h1>
@@ -403,7 +404,7 @@ export default function ProfilePage() {
                   {user.favourites.characters.nodes.map((char: any) => (
                     <div key={char.id} className="w-20 md:w-24 flex-shrink-0 group">
                       <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-white/5 bg-slate-950 mb-2">
-                        <img src={char.image.large} alt={char.name.full} className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700 brightness-90 group-hover:brightness-110" />
+                        <Image src={char.image.large} alt={char.name.full} fill sizes="96px" className="object-cover group-hover:scale-115 transition-transform duration-700 brightness-90 group-hover:brightness-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
                       </div>
                       <h4 className="text-[8px] font-black text-center text-slate-500 uppercase truncate px-1 group-hover:text-blue-400 transition-colors">{char.name.full}</h4>
@@ -441,7 +442,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-3 sm:gap-4 flex-grow min-w-0">
                         {/* Thumbnail */}
                         <Link href={`/anime/${entry.media.id}`} className="relative w-12 h-16 sm:w-14 sm:h-20 flex-shrink-0 rounded-lg sm:rounded-xl overflow-hidden bg-slate-800">
-                          <img src={entry.media.coverImage.large} alt={entry.media.title.romaji} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          <Image src={entry.media.coverImage.large} alt={entry.media.title.romaji} fill sizes="(max-width: 640px) 48px, 56px" className="object-cover group-hover:scale-110 transition-transform duration-500" />
                         </Link>
 
                         {/* Info */}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const clientId = process.env.NEXT_PUBLIC_ANILIST_CLIENT_ID || '10978';
@@ -19,10 +20,13 @@ export default function LoginPage() {
         transition={{ duration: 2 }}
         className="absolute inset-0 z-0"
       >
-        <img
+        <Image
           src="https://wallpapercave.com/wp/wp12036735.jpg"
           alt="Background"
-          className="w-full h-full object-cover"
+          fill
+          priority
+          unoptimized
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#05080f] via-[#05080f]/90 to-transparent" />
       </motion.div>

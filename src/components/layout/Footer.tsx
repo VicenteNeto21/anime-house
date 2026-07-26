@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -57,16 +58,16 @@ export default function Footer() {
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-400 transition-colors mr-1">Dados via</span>
               <div className="flex items-center gap-4">
                 <a href="https://anilist.co" target="_blank" rel="noopener noreferrer" title="AniList">
-                  <img src="https://anilist.co/img/icons/icon.svg" alt="AniList" className="h-5 w-5" />
+                  <Image src="https://anilist.co/img/icons/icon.svg" alt="AniList" width={20} height={20} />
                 </a>
                 <a href="https://myanimelist.net" target="_blank" rel="noopener noreferrer" title="MyAnimeList">
-                  <img src="https://cdn.myanimelist.net/images/favicon.ico" alt="MAL" className="h-4 w-4 brightness-125" />
+                  <Image src="https://cdn.myanimelist.net/images/favicon.ico" alt="MAL" width={16} height={16} className="brightness-125" />
                 </a>
                 <a href="https://kitsu.io" target="_blank" rel="noopener noreferrer" title="Kitsu">
-                  <img src="https://kitsu.io/favicon.ico" alt="Kitsu" className="h-4 w-4" />
+                  <Image src="https://kitsu.io/favicon.ico" alt="Kitsu" width={16} height={16} />
                 </a>
                 <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer" title="TMDB">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg" alt="TMDB" className="h-2.5 w-auto" />
+                  <Image src="https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg" alt="TMDB" width={60} height={10} className="h-2.5 w-auto" />
                 </a>
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AniListAPI } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface AddToListProps {
   animeId: number;
@@ -113,7 +114,7 @@ export default function AddToList({ animeId, totalEpisodes }: AddToListProps) {
       <div className="flex items-center justify-between px-1">
         <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Sincronização</span>
         <div className="flex items-center gap-1.5 opacity-40 grayscale hover:grayscale-0 transition-all cursor-default">
-          <img src="https://anilist.co/img/icons/icon.svg" className="w-3 h-3" alt="AniList" />
+          <Image src="https://anilist.co/img/icons/icon.svg" className="w-3 h-3" alt="AniList" width={12} height={12} />
           <span className="text-[8px] font-black text-[#3DB4F2]">AniList</span>
         </div>
       </div>

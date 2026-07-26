@@ -1,67 +1,141 @@
+﻿<div align="center">
+
 # 🏠 Anime House
 
-Plataforma de streaming e rastreamento de animes construída com **Next.js 16**, **React 19** e integração com a **API AniList**.
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Tailwind-CSS_4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <br/>
+  <img src="https://img.shields.io/badge/AniList-GraphQL-02A9FF?style=for-the-badge&logo=graphql&logoColor=white" alt="AniList" />
+  <img src="https://img.shields.io/badge/Python-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+</p>
 
-## ✨ Funcionalidades
+Uma plataforma de streaming e rastreamento de animes construída com foco em **performance**, **UI moderna** e integração profunda com a **API AniList**.
 
-- 🔍 Busca e exploração de animes (por gênero, temporada, ranking)
-- 📺 Player integrado com múltiplos servidores de streaming
-- 📊 Sincronização de progresso com AniList (login OAuth)
-- 📅 Calendário de lançamentos semanais
-- 📋 Gerenciamento de lista pessoal (Assistindo, Completo, Na Fila, etc.)
-- 🏆 Top 100 animes
-- 🎨 Interface dark com design flat e responsivo
+</div>
 
-## 🚀 Stack
+---
 
-- **Framework**: Next.js 16 (App Router + Turbopack)
-- **Frontend**: React 19, Tailwind CSS 4
-- **Microserviço**: Python (FastAPI + Playwright Stealth para extração de links)
-- **APIs**: AniList GraphQL, TMDB, Kitsu
-- **Auth**: AniList OAuth2
-- **Deploy**: Vercel (Frontend) + VPS/Railway (Microserviço Python)
+## ✨ Funcionalidades Principais
 
-## 📦 Setup Local
+- 🔍 **Exploração Completa:** Busca de animes por gênero, temporada, formato, status e ranking.
+- 📺 **Player Inteligente:** Player integrado com suporte a múltiplos servidores de streaming, histórico local e progresso em tempo real.
+- 📊 **Integração AniList:** Sincronização automática de progresso (Assistindo, Completo, Na Fila) via login OAuth2.
+- 📅 **Calendário de Lançamentos:** Guia visual de episódios da semana em tempo real.
+- 🏆 **Rankings Oficiais:** Listas completas do Top 100 Animes Globais.
+- 🎨 **Design Imersivo:** Interface Dark Mode premium com tipografia arrojada (Sora + Archivo Black), micro-interações e thumbnails otimizadas.
+- ⚡ **Performance:** Imagens otimizadas (AVIF/WebP), Server Components, e layout responsivo.
 
-```bash
-# Clonar
+---
+
+## 🚀 Arquitetura e Stack
+
+A plataforma é dividida em duas camadas principais:
+
+### 🌐 Frontend (Web App)
+- **Framework**: Next.js 15 (App Router + Turbopack)
+- **UI & Estilização**: React 19, Tailwind CSS v4
+- **State Management**: Context API + LocalStorage
+- **Integração de Dados**:
+  - AniList (GraphQL) - Catálogo principal e perfis de usuário
+  - TMDB (REST) - Metadados extras e imagens
+  - Kitsu (REST) - Fallbacks de dados
+  - MAL (REST) - Enriquecimento de plataformas e popularidade
+
+### ⚙️ Backend (Microserviço de Extração)
+- **Linguagem**: Python 3
+- **Framework**: FastAPI
+- **Web Scraping**: Playwright (Stealth Mode) para extração limpa de links de streaming em servidores terceiros
+- **Servidor**: Uvicorn
+
+---
+
+## 📦 Como Rodar Localmente
+
+### 1. Clonar o Repositório
+
+`ash
 git clone https://github.com/VicenteNeto21/anime-house.git
 cd anime-house
+`
 
-# 1. Instalar dependências Frontend
+### 2. Configurar o Frontend (Next.js)
+
+Instale as dependências e crie seu arquivo de ambiente:
+
+`ash
 npm install
-
-# 2. Configurar variáveis de ambiente
 cp .env.example .env.local
-# Preencher as variáveis no .env.local
+`
 
-# 3. Rodar em desenvolvimento
-# Você pode usar os atalhos no Windows (iniciar-servidor.bat e iniciar-extrator.bat)
-# Ou manualmente em 2 terminais separados:
-npm run dev
-
-# 4. Rodar o Extrator de Vídeos (Python) no segundo terminal:
-cd extractor
-python -m venv venv
-venv\Scripts\activate # (no Mac/Linux use: source venv/bin/activate)
-pip install -r requirements.txt
-playwright install chromium
-uvicorn main:app --port 8000 --reload
-```
-
-## 🌐 Variáveis de Ambiente
+Preencha as seguintes chaves no .env.local:
 
 | Variável | Descrição |
 |----------|-----------|
-| `NEXT_PUBLIC_ANILIST_CLIENT_ID` | Client ID do AniList OAuth |
-| `ANILIST_CLIENT_SECRET` | Secret do AniList OAuth |
-| `NEXT_PUBLIC_ANILIST_REDIRECT_URL` | URL de redirect (usar domínio da Vercel em produção) |
-| `NEXT_PUBLIC_TMDB_API_KEY` | API Key do TMDB |
-| `EXTRACTOR_SERVICE_URL` | Opcional. URL do microserviço Python (Padrão: `http://localhost:8000`) |
+| NEXT_PUBLIC_ANILIST_CLIENT_ID | Client ID do seu App no AniList |
+| ANILIST_CLIENT_SECRET | Client Secret do seu App no AniList |
+| NEXT_PUBLIC_ANILIST_REDIRECT_URL | URL de callback OAuth (ex: http://localhost:3000) |
+| NEXT_PUBLIC_TMDB_API_KEY | Sua chave de API do TheMovieDB |
+| NEXTAUTH_SECRET | Uma string aleatória segura para criptografia da sessão |
+| NEXTAUTH_URL | A URL base do projeto (ex: http://localhost:3000) |
+| MAL_CLIENT_ID | Client ID da API do MyAnimeList |
 
-## 📝 Deploy na Vercel
+Inicie o servidor de desenvolvimento:
 
-1. Conecte o repositório GitHub na [Vercel](https://vercel.com)
-2. Configure as variáveis de ambiente no painel
-3. Atualize `NEXT_PUBLIC_ANILIST_REDIRECT_URL` para o domínio Vercel
-4. Deploy automático em cada push para `main`
+`ash
+npm run dev
+# O app estará disponível em http://localhost:3000
+`
+
+### 3. Configurar o Extrator (Python)
+
+Em um **novo terminal**, acesse a pasta do extrator e inicie o ambiente virtual:
+
+`ash
+cd extractor
+python -m venv venv
+
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+pip install -r requirements.txt
+playwright install chromium
+uvicorn main:app --port 8000 --reload
+`
+
+---
+
+## 📝 Deploy (Produção)
+
+A arquitetura recomendada para deploy é hibrida:
+
+1. **Frontend (Vercel)**
+   - Conecte o repositório na [Vercel](https://vercel.com)
+   - Configure as variáveis de ambiente (atualize o NEXT_PUBLIC_ANILIST_REDIRECT_URL e NEXTAUTH_URL para o domínio real)
+   - Adicione sua URL da Vercel na página de Developer do AniList em "Redirect URLs"
+
+2. **Microserviço Extrator (Railway / Render / VPS)**
+   - Hospede a pasta /extractor como um serviço Python.
+   - Configure a variável EXTRACTOR_SERVICE_URL na Vercel apontando para este novo servidor.
+
+---
+
+## 🎨 Contribuindo
+
+Pull requests são sempre bem-vindos! Se você deseja adicionar novas plataformas ao scraper, melhorar a responsividade ou adicionar novos recursos da API AniList:
+
+1. Faça o fork do projeto
+2. Crie uma branch para sua feature (git checkout -b feature/AmazingFeature)
+3. Commit suas mudanças (git commit -m 'Add some AmazingFeature')
+4. Faça o push (git push origin feature/AmazingFeature)
+5. Abra um Pull Request
+
+---
+
+<div align="center">
+  <p>Feito com ❤️ pela comunidade Otaku.</p>
+</div>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { NewsAPI } from '@/lib/api';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
@@ -53,10 +54,13 @@ export default async function NoticiasPage({
                   className="group flex flex-col bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden hover:border-blue-500/30 transition-all shadow-xl hover:shadow-blue-500/5 backdrop-blur-sm"
                 >
                   <div className="relative aspect-[16/9] overflow-hidden">
-                    <img 
-                      src={item.image} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-lg">
                       {item.category}
