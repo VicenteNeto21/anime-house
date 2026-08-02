@@ -14,12 +14,23 @@ interface CustomVideoPlayerProps {
 
 export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip }: CustomVideoPlayerProps) {
   const artRef = useRef<HTMLDivElement>(null);
+  const onEndedRef = useRef(onEnded);
+  const aniskipRef = useRef(aniskip);
+
+  // Manter refs atualizadas sem causar re-render ou re-instanciação do player
+  useEffect(() => {
+    onEndedRef.current = onEnded;
+  }, [onEnded]);
+
+  useEffect(() => {
+    aniskipRef.current = aniskip;
+  }, [aniskip]);
 
   useEffect(() => {
     if (!artRef.current) return;
 
-    // Converte os intervalos de pulo para as marcações de progresso do Artplayer
-    const highlight = aniskip?.map((skip) => ({
+    // Converte os intervalos de pulo iniciais (embora idealmente pudéssemos adicionar dinamicamente)
+    const highlight = aniskipRef.current?.map((skip) => ({
       time: skip.interval.startTime,
       text: skip.skipType === 'op' ? 'Abertura' : 'Encerramento',
     })) || [];
@@ -66,7 +77,7 @@ export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip
           },
           click: function () {
             if (art) {
-              const currentSkip = aniskip?.find(
+              const currentSkip = aniskipRef.current?.find(
                 (s) => art.currentTime >= s.interval.startTime && art.currentTime <= s.interval.endTime
               );
               if (currentSkip) {
@@ -81,7 +92,7 @@ export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip
     // Lógica para mostrar/esconder o botão de pular abertura
     art.on('video:timeupdate', () => {
       const currentTime = art.currentTime;
-      const shouldShowSkip = aniskip?.some(
+      const shouldShowSkip = aniskipRef.current?.some(
         (skip) => currentTime >= skip.interval.startTime && currentTime <= skip.interval.endTime
       );
       
@@ -90,16 +101,18 @@ export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip
       }
     });
 
-    if (onEnded) {
-      art.on('video:ended', onEnded);
-    }
+    art.on('video:ended', () => {
+      if (onEndedRef.current) {
+        onEndedRef.current();
+      }
+    });
 
     return () => {
       if (art && art.destroy) {
         art.destroy(false);
       }
     };
-  }, [url, title, poster, aniskip, onEnded]);
+  }, [url, title, poster]); // Dependências reduzidas para evitar destruição do player
 
   return <div ref={artRef} className="w-full h-full" />;
 }

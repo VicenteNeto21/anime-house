@@ -1,3 +1,5 @@
+import { AnimeCardSkeleton } from '@/components/ui/Skeleton';
+
 export default function LoadingList() {
   return (
     <main className="container mx-auto px-4 lg:px-8 py-12 bg-slate-950 min-h-screen">
@@ -25,13 +27,7 @@ export default function LoadingList() {
       {/* Grid Skeleton */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
         {[...Array(18)].map((_, i) => (
-          <div key={i} className="aspect-[2/3] bg-slate-900 rounded-2xl animate-pulse border border-white/5 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 space-y-2">
-              <div className="w-3/4 h-3 bg-slate-800 rounded"></div>
-              <div className="w-1/2 h-2 bg-slate-800 rounded"></div>
-            </div>
-          </div>
+          <AnimeCardSkeleton key={`skeleton-${i}`} />
         ))}
       </div>
     </main>

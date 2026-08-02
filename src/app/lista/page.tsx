@@ -135,10 +135,10 @@ export default async function ListPage({
           </Link>
         )}
 
-        {Array.from({ length: Math.min(5, pageInfo.lastPage || 5) }, (_, i) => {
+        {Array.from({ length: Math.min(5, pageInfo?.lastPage || 5) }, (_, i) => {
           let p = page - 2 + i;
           if (page <= 2) p = i + 1;
-          if (pageInfo.lastPage && p > pageInfo.lastPage) return null;
+          if (pageInfo?.lastPage && p > pageInfo.lastPage) return null;
           if (p <= 0) return null;
           
           return (
@@ -156,7 +156,7 @@ export default async function ListPage({
           );
         })}
 
-        {pageInfo.hasNextPage && (
+        {pageInfo?.hasNextPage && (
           <Link
             href={`${paginationBaseUrl}&page=${page + 1}`}
             className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white transition-all"

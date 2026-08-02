@@ -3,6 +3,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { Anime, AniListAPI } from '@/lib/api';
 import EpisodeCard from './EpisodeCard';
+import { EpisodeCardSkeleton } from '@/components/ui/Skeleton';
 
 interface RecentListClientProps {
   initialAnimes: Anime[];
@@ -68,9 +69,15 @@ export default function RecentListClient({ initialAnimes }: RecentListClientProp
         ))}
       </div>
 
-      {hasMore && (
-        <div ref={loaderRef} className="mt-12 flex justify-center py-6">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      {/* Elemento invisível para acionar o observer */}
+      {hasMore && <div ref={loaderRef} className="h-4 mt-8" />}
+
+      {/* Skeletons de carregamento */}
+      {loading && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-6">
+          {[...Array(10)].map((_, i) => (
+            <EpisodeCardSkeleton key={`skeleton-${i}`} />
+          ))}
         </div>
       )}
     </>

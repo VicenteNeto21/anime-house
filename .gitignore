@@ -48,3 +48,7 @@ legacy-v2/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.agents/
+.vudovn/
+.agent/

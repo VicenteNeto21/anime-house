@@ -43,3 +43,15 @@ export function NewsCardSkeleton() {
     </div>
   );
 }
+
+export function EpisodeCardSkeleton() {
+  return (
+    <div className="flex flex-col cursor-pointer">
+      <Skeleton className="aspect-video w-full rounded-xl" />
+      <div className="py-3 px-1 space-y-2">
+        <Skeleton className="h-4 w-5/6" variant="text" />
+        <Skeleton className="h-3 w-1/3" variant="text" />
+      </div>
+    </div>
+  );
+}
