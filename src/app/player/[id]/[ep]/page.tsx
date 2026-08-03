@@ -654,7 +654,7 @@ export default function PlayerPage() {
       <TorrentModal 
         isOpen={showTorrentModal}
         onClose={() => setShowTorrentModal(false)}
-        defaultQuery={anime ? `${anime.titleRomaji || anime.title} ${currentEp.toString().padStart(2, '0')}` : ''}
+        defaultQuery={anime ? `${anime.title} ${currentEp.toString().padStart(2, '0')}` : ''}
         onSelectMagnet={(magnetUrl) => {
           setWebtorMagnet(magnetUrl);
           setActiveSource('webtor');
