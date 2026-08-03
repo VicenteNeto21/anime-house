@@ -9,12 +9,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
-import dynamic from 'next/dynamic';
 import TorrentModal from '@/components/player/TorrentModal';
 import { AniSkipAPI, SkipTime } from '@/lib/aniskip';
+import dynamic from 'next/dynamic';
+import WebtorPlayer from '@/components/player/WebtorPlayer';
 
 const CustomVideoPlayer = dynamic(() => import('@/components/player/CustomVideoPlayer'), { ssr: false });
-const WebtorPlayer = dynamic(() => import('@/components/player/WebtorPlayer'), { ssr: false });
 
 export default function PlayerPage() {
   const params = useParams();
