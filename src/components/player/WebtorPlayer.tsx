@@ -169,7 +169,6 @@ export default function WebtorPlayer({ magnet, poster, title, tmdbId }: WebtorPl
         className="w-full h-full border-0 outline-none"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
-        sandbox="allow-scripts allow-forms allow-popups allow-presentation"
       />
     </div>
   );
