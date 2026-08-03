@@ -645,7 +645,8 @@ export const AniListAPI = {
       const translated = data[0].map((item: any) => item[0]).join('');
       return translated || text;
     } catch (error) {
-      console.error('TRANSLATION_ERROR:', error);
+      // Falhas de tradução (CORS, AdBlock, limite de uso) são normais em chamadas para APIs abertas.
+      // Retornamos silenciosamente o texto original em inglês para não poluir o console.
       return text;
     }
   },

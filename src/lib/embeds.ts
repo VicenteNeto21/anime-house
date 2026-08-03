@@ -10,13 +10,23 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz' | 'warezcdn';
+  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz' | 'warezcdn' | 'imagesskill' | 'hls' | 'webtor';
   url: string;
   server?: string;
   audioLabel?: string;
   type?: 'iframe' | 'video';
   isAsync?: boolean;
 }
+
+// ─────────────────────────────────────────────
+// ImagesSkill HLS API (cdn.imagesskill.com)
+// ─────────────────────────────────────────────
+export const ImagesSkillAPI = {
+  getEpisodeUrl(slug: string, episode = 1): string {
+    const epPad = episode.toString().padStart(2, '0');
+    return `https://cdn.imagesskill.com/stream/f/${slug}/${epPad}.mp4/index.m3u8`;
+  }
+};
 
 // ─────────────────────────────────────────────
 // AutoEmbed & SuperEmbed API
@@ -197,7 +207,8 @@ export function getEmbedSources(
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
 
-  // 0. MeusAnimes (DooPlay Extractor)
+  /*
+  // 0. MeusAnimes (DooPlay Extractor) - OFF
   if (slug) {
     sources.push({
       id: 'meusanimes',
@@ -208,16 +219,31 @@ export function getEmbedSources(
       isAsync: true,
     });
   }
+  */
+
+  // 0. Player HLS Direct Stream (Ultra Rápido)
+  if (slug) {
+    sources.push({
+      id: 'imagesskill',
+      name: 'Player Ultra HLS (Sem Anúncios)',
+      provider: 'imagesskill',
+      url: ImagesSkillAPI.getEpisodeUrl(slug, episode),
+      type: 'video',
+    });
+  }
 
   // 1. EmbedPlay (fonte principal)
-  sources.push({
-    id: 'embedplay',
-    name: 'Player Principal (Rápido)',
-    provider: 'embedplay',
-    url: EmbedPlayAPI.getEpisodeUrl(tmdbId, season, episode),
-  });
+  if (tmdbId) {
+    sources.push({
+      id: 'embedplay',
+      name: 'Player Principal (Rápido)',
+      provider: 'embedplay',
+      url: EmbedPlayAPI.getEpisodeUrl(tmdbId, season, episode),
+    });
+  }
 
-  // 2. Fembed — Embed único (com seletor de servidores interno)
+  /*
+  // 2. Fembed — OFF
   sources.push({
     id: 'fembed',
     name: 'Player Multi-Opções',
@@ -225,9 +251,8 @@ export function getEmbedSources(
     url: FembedAPI.getEpisodeUrl(tmdbId, season, episode, audio),
   });
 
-  // 3. Fembed — Servidores individuais
+  // 3. Fembed Servidores — OFF
   for (let s = 1; s <= 4; s++) {
-    // Áudio só funciona no servidor 1 (Principal)
     const serverAudio = s === 1 ? audio : 'default';
     sources.push({
       id: `fembed-s${s}`,
@@ -238,7 +263,7 @@ export function getEmbedSources(
     });
   }
 
-  // 4. Vidsrc
+  // 4. Vidsrc - OFF
   sources.push({
     id: 'vidsrc',
     name: 'Player Global',
@@ -246,6 +271,7 @@ export function getEmbedSources(
     url: VidsrcAPI.getEpisodeUrl(tmdbId, season, episode),
     type: 'iframe',
   });
+  */
 
   // 4.1. AutoEmbed (Desativado - API offline)
   /*
@@ -258,7 +284,8 @@ export function getEmbedSources(
   });
   */
 
-  // 4.2. SuperEmbed
+  /*
+  // 4.2. SuperEmbed - OFF
   sources.push({
     id: 'superembed',
     name: 'Player Ultra',
@@ -266,17 +293,21 @@ export function getEmbedSources(
     url: SuperEmbedAPI.getEpisodeUrl(tmdbId, season, episode),
     type: 'iframe',
   });
+  */
 
-  // 4.3. SuperFlix
-  sources.push({
-    id: 'superflix',
-    name: 'SuperFlix (VIP)',
-    provider: 'superflix',
-    url: SuperFlixAPI.getEpisodeUrl(tmdbId, season, episode),
-    type: 'iframe',
-  });
+  // 4.3. SuperFlix (Tentativa de correção / Mantido conforme solicitado)
+  if (tmdbId) {
+    sources.push({
+      id: 'superflix',
+      name: 'SuperFlix (VIP)',
+      provider: 'superflix',
+      url: SuperFlixAPI.getEpisodeUrl(tmdbId, season, episode),
+      type: 'iframe',
+    });
+  }
 
-  // 4.4. XYZ Player
+  /*
+  // 4.4. XYZ Player - OFF
   sources.push({
     id: 'xyz',
     name: 'Player Alternativo',
@@ -284,6 +315,7 @@ export function getEmbedSources(
     url: XYZAPI.getEpisodeUrl(tmdbId, season, episode),
     type: 'iframe',
   });
+  */
 
   // 4.5. WarezCDN (Desativado - API offline)
   /*
@@ -334,13 +366,16 @@ export function getMovieEmbedSources(
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
 
-  sources.push({
-    id: 'embedplay',
-    name: 'Player Principal (Rápido)',
-    provider: 'embedplay',
-    url: EmbedPlayAPI.getMovieUrl(tmdbId),
-  });
+  if (tmdbId) {
+    sources.push({
+      id: 'embedplay',
+      name: 'Player Principal (Rápido)',
+      provider: 'embedplay',
+      url: EmbedPlayAPI.getMovieUrl(tmdbId),
+    });
+  }
 
+  /*
   sources.push({
     id: 'fembed',
     name: 'Player Multi-Opções',
@@ -367,6 +402,7 @@ export function getMovieEmbedSources(
     url: VidsrcAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
+  */
 
   // 4.1. AutoEmbed (Desativado - API offline)
   /*
@@ -379,6 +415,7 @@ export function getMovieEmbedSources(
   });
   */
 
+  /*
   // 4.2. SuperEmbed
   sources.push({
     id: 'superembed',
@@ -387,16 +424,20 @@ export function getMovieEmbedSources(
     url: SuperEmbedAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
+  */
 
   // 4.3. SuperFlix
-  sources.push({
-    id: 'superflix',
-    name: 'SuperFlix (VIP)',
-    provider: 'superflix',
-    url: SuperFlixAPI.getMovieUrl(tmdbId),
-    type: 'iframe',
-  });
+  if (tmdbId) {
+    sources.push({
+      id: 'superflix',
+      name: 'SuperFlix (VIP)',
+      provider: 'superflix',
+      url: SuperFlixAPI.getMovieUrl(tmdbId),
+      type: 'iframe',
+    });
+  }
 
+  /*
   // 4.4. XYZ Player
   sources.push({
     id: 'xyz',
@@ -405,6 +446,7 @@ export function getMovieEmbedSources(
     url: XYZAPI.getMovieUrl(tmdbId),
     type: 'iframe',
   });
+  */
 
   // 4.5. WarezCDN (Desativado - API offline)
   /*

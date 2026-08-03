@@ -9,8 +9,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
-import CustomVideoPlayer from '@/components/player/CustomVideoPlayer';
+import dynamic from 'next/dynamic';
+import TorrentModal from '@/components/player/TorrentModal';
 import { AniSkipAPI, SkipTime } from '@/lib/aniskip';
+
+const CustomVideoPlayer = dynamic(() => import('@/components/player/CustomVideoPlayer'), { ssr: false });
+const WebtorPlayer = dynamic(() => import('@/components/player/WebtorPlayer'), { ssr: false });
 
 export default function PlayerPage() {
   const params = useParams();
@@ -36,6 +40,10 @@ export default function PlayerPage() {
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [aniskip, setAniskip] = useState<SkipTime[]>([]);
+
+  // Torrent State
+  const [showTorrentModal, setShowTorrentModal] = useState(false);
+  const [webtorMagnet, setWebtorMagnet] = useState<string | null>(null);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const serverMenuRef = useRef<HTMLDivElement>(null);
@@ -98,11 +106,14 @@ export default function PlayerPage() {
   }, [anime]);
 
   useEffect(() => {
-    if (!tmdbId) return;
-    const embedSources = getEmbedSources(tmdbId, 1, currentEp, audio, slug);
+    if (tmdbLoading) return;
+    const embedSources = getEmbedSources(tmdbId || '', 1, currentEp, audio, slug);
+    if (embedSources.length > 0 && !embedSources.find(s => s.id === activeSource)) {
+      setActiveSource(embedSources[0].id);
+    }
     setSources(embedSources);
     setIframeKey(prev => prev + 1);
-  }, [tmdbId, currentEp, audio, slug]);
+  }, [tmdbId, currentEp, audio, slug, tmdbLoading]);
 
   // 4. Save watch history
   useEffect(() => {
@@ -155,7 +166,11 @@ export default function PlayerPage() {
   }, []);
 
   // Get active source URL
-  const currentSource = sources.find(s => s.id === activeSource) || sources[0];
+  const displaySources: EmbedSource[] = webtorMagnet 
+    ? [...sources, { id: 'webtor', name: 'Webtor (Torrent P2P)', provider: 'webtor', audio: audio, type: 'iframe', url: webtorMagnet } as EmbedSource]
+    : sources;
+
+  const currentSource = displaySources.find(s => s.id === activeSource) || displaySources[0];
   const currentUrl = currentSource?.url;
 
   // Episode navigation
@@ -173,12 +188,11 @@ export default function PlayerPage() {
   // Handle audio change
   const handleAudioChange = (newAudio: AudioOption) => {
     setAudio(newAudio);
-    // Sources will regenerate via useEffect
   };
 
   // Handle server change
   const handleSourceChange = async (sourceId: string) => {
-    const source = sources.find(s => s.id === sourceId);
+    const source = displaySources.find(s => s.id === sourceId);
     if (!source) return;
 
     setActiveSource(sourceId);
@@ -284,8 +298,8 @@ export default function PlayerPage() {
           <div className={`flex-1 min-w-0 flex flex-col gap-4`}>
 
             {/* Player Iframe Container */}
-            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl shadow-black/50 group">
-              {tmdbLoading || !tmdbId ? (
+            <div className="relative z-10 w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl shadow-black/50 group">
+              {activeSource !== 'webtor' && (tmdbLoading || !tmdbId) ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950">
                   {tmdbLoading ? (
                     <>
@@ -326,6 +340,13 @@ export default function PlayerPage() {
                   onEnded={handleVideoEnded}
                   aniskip={aniskip}
                 />
+              ) : activeSource === 'webtor' && webtorMagnet ? (
+                <WebtorPlayer 
+                  magnet={webtorMagnet} 
+                  title={`${anime?.title || 'Anime'} - Episódio ${currentEp}`}
+                  poster={anime?.banner || anime?.poster}
+                  tmdbId={tmdbId ? String(tmdbId) : undefined}
+                />
               ) : (
                 <iframe
                   key={iframeKey}
@@ -341,7 +362,7 @@ export default function PlayerPage() {
             </div>
 
             {/* Player Controls Bar */}
-            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <div className="relative z-50 flex flex-wrap items-center gap-2 md:gap-3">
 
               {/* Episode Navigation */}
               <div className="flex items-center gap-1.5">
@@ -377,9 +398,18 @@ export default function PlayerPage() {
               {/* Divider */}
               <div className="h-6 w-px bg-white/5 hidden md:block" />
 
+              {/* Torrent / Nyaa Button */}
+              <button
+                onClick={() => setShowTorrentModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-all ml-auto md:ml-0"
+              >
+                <i className="fa-solid fa-magnet text-indigo-400" />
+                {webtorMagnet ? 'Trocar Torrent/Seed' : 'Buscar Torrent'}
+              </button>
+
               {/* Server Selector */}
-              {sources.length > 0 && (
-                <div className="relative" ref={serverMenuRef}>
+              {displaySources.length > 0 && (
+                <div className="relative ml-auto md:ml-0" ref={serverMenuRef}>
                   <button
                     onClick={() => setShowServerMenu(!showServerMenu)}
                     className="flex items-center gap-2 px-4 py-2 bg-slate-900/80 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:bg-slate-800 transition-all"
@@ -396,7 +426,7 @@ export default function PlayerPage() {
                           Selecionar Servidor
                         </p>
                       </div>
-                      {sources.map((source) => (
+                      {displaySources.map((source) => (
                         <button
                           key={source.id}
                           onClick={() => handleSourceChange(source.id)}
@@ -485,30 +515,77 @@ export default function PlayerPage() {
                 </Link>
 
                 <div className="flex-1 min-w-0">
-                  <Link href={`/anime/${anime.id}`} className="hover:text-blue-400 transition-colors">
-                    <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-tight leading-tight mb-1">
-                      {anime.title}
-                    </h1>
-                  </Link>
+                  <div className="flex items-center gap-2 mb-1">
+                    {/* Classificação Indicativa */}
+                    <span className="px-2 py-0.5 bg-red-500/10 rounded-md border border-red-500/20 text-red-500 font-black text-[10px] flex-shrink-0">
+                      {anime.genres?.some(g => ['Hentai', 'Ecchi', 'Gore'].includes(g))
+                        ? '18+'
+                        : anime.genres?.some(g => ['Psychological', 'Horror', 'Thriller'].includes(g))
+                        ? '16+'
+                        : anime.genres?.some(g => ['Action', 'Drama', 'Mecha'].includes(g))
+                        ? '14+'
+                        : 'Livre'}
+                    </span>
+                    <Link href={`/anime/${anime.id}`} className="hover:text-blue-400 transition-colors min-w-0">
+                      <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-tight leading-tight truncate">
+                        {anime.title}
+                      </h1>
+                    </Link>
+                  </div>
                   <p className="text-sm text-slate-300 font-medium mb-2">
                     <span className="text-blue-500 font-black">EP {currentEp.toString().padStart(2, '0')}</span>
                     {epTitle !== `Episódio ${currentEp}` && (
                       <span className="text-slate-500"> — {epTitle}</span>
                     )}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500">
-                    {anime.format && <span>{anime.format}</span>}
-                    {anime.format && <span className="text-slate-700">•</span>}
-                    <span>{anime.year}</span>
-                    <span className="text-slate-700">•</span>
-                    <span className={anime.status === 'Em Lançamento' ? 'text-emerald-500' : 'text-slate-500'}>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    {anime.format && (
+                      <span className="px-2 py-1 bg-slate-800/50 rounded-md border border-white/5 text-slate-200">
+                        {anime.format}
+                      </span>
+                    )}
+                    
+                    {anime.year && anime.year !== '??' && (
+                      <span className="px-2 py-1 bg-slate-800/50 rounded-md border border-white/5 text-slate-200">
+                        {anime.year}
+                      </span>
+                    )}
+
+                    <span className={`px-2 py-1 rounded-md border ${
+                      anime.status === 'Em Lançamento' 
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                        : 'bg-slate-800/50 border-white/5 text-slate-400'
+                    }`}>
                       {anime.status}
                     </span>
+
+                    {anime.rating && anime.rating !== 'N/A' && anime.rating !== '0' && (
+                      <span className="px-2 py-1 bg-yellow-500/10 rounded-md border border-yellow-500/20 text-yellow-500 flex items-center gap-1.5 shadow-sm shadow-yellow-500/5">
+                        <i className="fa-solid fa-star text-[9px]" />
+                        {anime.rating}%
+                      </span>
+                    )}
+
+                    {anime.duration && anime.duration !== 'N/A' && (
+                      <span className="px-2 py-1 bg-blue-500/10 rounded-md border border-blue-500/20 text-blue-400 flex items-center gap-1.5">
+                        <i className="fa-solid fa-clock text-[9px]" />
+                        {anime.duration}
+                      </span>
+                    )}
+
+                    {anime.source && anime.source !== 'N/A' && (
+                      <span className="px-2 py-1 bg-purple-500/10 rounded-md border border-purple-500/20 text-purple-400 flex items-center gap-1.5">
+                        <i className="fa-solid fa-book-open text-[9px]" />
+                        {anime.source}
+                      </span>
+                    )}
+
+
+
                     {tmdbId && (
-                      <>
-                        <span className="text-slate-700">•</span>
-                        <span className="text-blue-500/60">TMDB: {tmdbId}</span>
-                      </>
+                      <span className="px-2 py-1 bg-slate-800/50 rounded-md border border-white/5 text-slate-500 text-[8px]">
+                        TMDB {tmdbId}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -574,6 +651,15 @@ export default function PlayerPage() {
           )}
         </div>
       </div>
+      <TorrentModal 
+        isOpen={showTorrentModal}
+        onClose={() => setShowTorrentModal(false)}
+        defaultQuery={anime ? `${anime.title} ${currentEp.toString().padStart(2, '0')}` : ''}
+        onSelectMagnet={(magnetUrl) => {
+          setWebtorMagnet(magnetUrl);
+          setActiveSource('webtor');
+        }}
+      />
     </div>
   );
 }

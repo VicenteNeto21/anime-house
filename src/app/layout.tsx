@@ -13,6 +13,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CookieConsent from "@/components/layout/CookieConsent";
+import ConsoleEasterEgg from "@/components/ConsoleEasterEgg";
 
 import { LibraryProvider } from "@/context/LibraryContext";
 import { Providers } from "@/components/Providers";
@@ -71,6 +72,7 @@ export default function RootLayout({
       <body className={`${sora.variable} ${archivoBlack.variable} min-h-screen flex flex-col`}>
         <Providers>
           <LibraryProvider>
+            <ConsoleEasterEgg />
             <Navbar />
             <main className="flex-grow pt-16">
               {children}

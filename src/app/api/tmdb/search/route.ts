@@ -10,8 +10,8 @@ export async function GET(request: Request) {
 
   const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
   if (!apiKey) {
-    console.error('TMDB_API_KEY is not configured');
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    // Retornamos 200 com array vazio para evitar o erro 500 vermelho feio no console do navegador
+    return NextResponse.json({ results: [], error: 'TMDB_API_KEY_MISSING' });
   }
 
   const url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pt-BR`;
