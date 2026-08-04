@@ -658,6 +658,12 @@ export default function PlayerPage() {
           setWebtorMagnet(magnetUrl);
           setActiveSource('webtor');
         }}
+        animeTitles={anime ? {
+          english: anime.titleEnglish,
+          romaji: anime.titleRomaji,
+          native: anime.titleNative
+        } : undefined}
+        currentEp={currentEp}
       />
     </div>
   );

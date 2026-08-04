@@ -16,24 +16,24 @@ export interface TorrentResult {
   subs?: string[];
 }
 
-const LANG_MAP: Record<string, { name: string, flag: string }> = {
-  'pt': { name: 'Português (Brasil)', flag: '🇧🇷' },
-  'pt-br': { name: 'Português (Brasil)', flag: '🇧🇷' },
-  'br': { name: 'Português (Brasil)', flag: '🇧🇷' },
-  'en': { name: 'English', flag: '🇺🇸' },
-  'eng': { name: 'English', flag: '🇺🇸' },
-  'es': { name: 'Español', flag: '🇪🇸' },
-  'spa': { name: 'Español', flag: '🇪🇸' },
-  'jp': { name: 'Japanese', flag: '🇯🇵' },
-  'jap': { name: 'Japanese', flag: '🇯🇵' },
-  'ja': { name: 'Japanese', flag: '🇯🇵' },
-  'zh': { name: 'Chinese', flag: '🇨🇳' },
-  'ru': { name: 'Russian', flag: '🇷🇺' },
-  'fr': { name: 'French', flag: '🇫🇷' },
-  'de': { name: 'German', flag: '🇩🇪' },
-  'it': { name: 'Italian', flag: '🇮🇹' },
-  'ar': { name: 'Arabic', flag: '🇸🇦' },
-  'id': { name: 'Indonesian', flag: '🇮🇩' },
+const LANG_MAP: Record<string, { name: string, flag: React.ReactNode }> = {
+  'pt': { name: 'Português (Brasil)', flag: <img src="https://flagcdn.com/w20/br.png" alt="BR" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'pt-br': { name: 'Português (Brasil)', flag: <img src="https://flagcdn.com/w20/br.png" alt="BR" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'br': { name: 'Português (Brasil)', flag: <img src="https://flagcdn.com/w20/br.png" alt="BR" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'en': { name: 'English', flag: <img src="https://flagcdn.com/w20/us.png" alt="US" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'eng': { name: 'English', flag: <img src="https://flagcdn.com/w20/us.png" alt="US" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'es': { name: 'Español', flag: <img src="https://flagcdn.com/w20/es.png" alt="ES" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'spa': { name: 'Español', flag: <img src="https://flagcdn.com/w20/es.png" alt="ES" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'jp': { name: 'Japanese', flag: <img src="https://flagcdn.com/w20/jp.png" alt="JP" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'jap': { name: 'Japanese', flag: <img src="https://flagcdn.com/w20/jp.png" alt="JP" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'ja': { name: 'Japanese', flag: <img src="https://flagcdn.com/w20/jp.png" alt="JP" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'zh': { name: 'Chinese', flag: <img src="https://flagcdn.com/w20/cn.png" alt="CN" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'ru': { name: 'Russian', flag: <img src="https://flagcdn.com/w20/ru.png" alt="RU" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'fr': { name: 'French', flag: <img src="https://flagcdn.com/w20/fr.png" alt="FR" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'de': { name: 'German', flag: <img src="https://flagcdn.com/w20/de.png" alt="DE" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'it': { name: 'Italian', flag: <img src="https://flagcdn.com/w20/it.png" alt="IT" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'ar': { name: 'Arabic', flag: <img src="https://flagcdn.com/w20/sa.png" alt="SA" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
+  'id': { name: 'Indonesian', flag: <img src="https://flagcdn.com/w20/id.png" alt="ID" className="w-3.5 h-2.5 rounded-sm object-cover inline-block" /> },
 };
 
 function parseLanguagesFromTitle(title: string) {
@@ -66,12 +66,15 @@ interface TorrentModalProps {
   onClose: () => void;
   defaultQuery: string;
   onSelectMagnet: (magnetUrl: string) => void;
+  animeTitles?: { english?: string; romaji?: string; native?: string };
+  currentEp?: number;
 }
 
-export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMagnet }: TorrentModalProps) {
+export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMagnet, animeTitles, currentEp }: TorrentModalProps) {
   const [query, setQuery] = useState('');
-  const [isDublado, setIsDublado] = useState(false);
+  const [audioType, setAudioType] = useState<'RAW' | 'DUB' | 'MULTI'>('RAW');
   const [results, setResults] = useState<TorrentResult[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string>('ALL');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -82,14 +85,17 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
     setError('');
     
     try {
-      // Se estiver buscando dublado, usa a categoria 1_0 (Todos) e adiciona os termos amplos
-      const searchCategory = isDublado ? '1_0' : '1_2';
+      // RAW/LEG usa categoria 1_2 (English-translated), DUB e MULTI usam 1_0 (Todos) pois podem estar em RAW ou Non-English
+      const searchCategory = audioType === 'RAW' ? '1_2' : '1_0';
       
       let queries = [searchQuery];
-      if (isDublado && !searchQuery.toLowerCase().match(/(dublado|pt-br|multi-audio|dual-audio|multi)/)) {
+      if (audioType === 'DUB' && !searchQuery.toLowerCase().match(/(dublado|pt-br)/)) {
         queries = [
           `${searchQuery} PT-BR`,
-          `${searchQuery} Dublado`,
+          `${searchQuery} Dublado`
+        ];
+      } else if (audioType === 'MULTI' && !searchQuery.toLowerCase().match(/(multi-audio|dual-audio|multi)/)) {
+        queries = [
           `${searchQuery} Dual-Audio`,
           `${searchQuery} Multi-Audio`,
           `${searchQuery} MULTi`
@@ -101,6 +107,8 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
         fetchPromises.push(fetch(`/api/nyaa?q=${encodeURIComponent(q)}&c=${searchCategory}`).then(r => r.json()));
         fetchPromises.push(fetch(`/api/animetosho?q=${encodeURIComponent(q)}`).then(r => r.json()));
         fetchPromises.push(fetch(`/api/nekobt?q=${encodeURIComponent(q)}`).then(r => r.json()));
+        fetchPromises.push(fetch(`/api/tokyotoshokan?q=${encodeURIComponent(q)}`).then(r => r.json()));
+        fetchPromises.push(fetch(`/api/piratebay?q=${encodeURIComponent(q)}`).then(r => r.json()));
       });
 
       const allResponses = await Promise.all(fetchPromises);
@@ -174,7 +182,7 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
           {/* Header */}
           <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <i className="fa-solid fa-magnet text-blue-500"></i> Buscar Torrent (Nyaa & NekoBT)
+              <i className="fa-solid fa-magnet text-blue-500"></i> Buscar Torrent
             </h2>
             <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
               <i className="fa-solid fa-xmark text-xl"></i>
@@ -195,20 +203,41 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                 placeholder="Ex: Jujutsu Kaisen 05"
               />
               
-              <button
-                type="button"
-                onClick={() => setIsDublado(!isDublado)}
-                className={`px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all border ${
-                  isDublado 
-                    ? 'bg-purple-600/20 text-purple-400 border-purple-500/50' 
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-                }`}
-                title={isDublado ? 'Buscando animes Dublados (PT-BR)' : 'Buscando animes Originais (Inglês)'}
-              >
-                <i className={`fa-solid ${isDublado ? 'fa-microphone' : 'fa-language'}`}></i>
-                <span className="hidden sm:inline">{isDublado ? 'Dublado / PT-BR' : 'Original / Inglês'}</span>
-                <span className="sm:hidden">{isDublado ? 'PT-BR' : 'ING'}</span>
-              </button>
+              <div className="flex gap-1 border border-slate-700 bg-slate-800 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setAudioType('RAW')}
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    audioType === 'RAW' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'
+                  }`}
+                  title="Apenas Legendado (Inglês/Originais)"
+                >
+                  <i className="fa-solid fa-language sm:mr-1"></i>
+                  <span className="hidden sm:inline">Leg</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioType('DUB')}
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    audioType === 'DUB' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'
+                  }`}
+                  title="Apenas Dublados em PT-BR"
+                >
+                  <i className="fa-solid fa-microphone sm:mr-1"></i>
+                  <span className="hidden sm:inline">Dub</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioType('MULTI')}
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    audioType === 'MULTI' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'
+                  }`}
+                  title="Dual-Audio ou Multi-Audio"
+                >
+                  <i className="fa-solid fa-layer-group sm:mr-1"></i>
+                  <span className="hidden sm:inline">Multi</span>
+                </button>
+              </div>
 
               <button 
                 type="submit" 
@@ -219,6 +248,74 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
               </button>
             </form>
           </div>
+
+          {/* Quick Language Search Buttons */}
+          {animeTitles && (
+            <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-2 items-center">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">Pesquisa rápida:</span>
+              
+              {animeTitles.english && (
+                <button 
+                  onClick={() => {
+                    const newQuery = `${animeTitles.english} ${currentEp?.toString().padStart(2, '0')}`;
+                    setQuery(newQuery);
+                    searchNyaa(newQuery);
+                  }}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/50 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                  title={animeTitles.english}
+                >
+                  <img src="https://flagcdn.com/w20/us.png" alt="US" className="w-4 h-3 rounded-sm object-cover" /> Inglês
+                </button>
+              )}
+              
+              {animeTitles.romaji && (
+                <button 
+                  onClick={() => {
+                    const newQuery = `${animeTitles.romaji} ${currentEp?.toString().padStart(2, '0')}`;
+                    setQuery(newQuery);
+                    searchNyaa(newQuery);
+                  }}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/50 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                  title={animeTitles.romaji}
+                >
+                  <i className="fa-solid fa-language text-blue-400 text-xs"></i> Romaji
+                </button>
+              )}
+
+              {animeTitles.native && (
+                <button 
+                  onClick={() => {
+                    const newQuery = `${animeTitles.native} ${currentEp?.toString().padStart(2, '0')}`;
+                    setQuery(newQuery);
+                    searchNyaa(newQuery);
+                  }}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/50 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                  title={animeTitles.native}
+                >
+                  <img src="https://flagcdn.com/w20/jp.png" alt="JP" className="w-4 h-3 rounded-sm object-cover" /> Original
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Source Filter Buttons */}
+          {!loading && !error && results.length > 0 && (
+            <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/30 flex gap-2 overflow-x-auto custom-scrollbar">
+              {['ALL', 'NYAA', 'NEKOBT', 'ANIMETOSHO', 'TOKYOTOSHOKAN', 'PIRATEBAY'].map((source) => (
+                <button
+                  key={source}
+                  onClick={() => setSourceFilter(source)}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                    sourceFilter === source
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                      : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                  }`}
+                >
+                  {source === 'ALL' ? 'Todas as Fontes' : source}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Results Area */}
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
@@ -236,7 +333,7 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
 
             {!loading && results.length > 0 && (
               <div className="flex flex-col gap-2">
-                {results.map((torrent, idx) => (
+                {results.filter(r => sourceFilter === 'ALL' || r.source?.toUpperCase() === sourceFilter).map((torrent, idx) => (
                   <div 
                     key={idx}
                     onClick={() => {
@@ -254,7 +351,10 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                       </h3>
                       {torrent.source && (
                         <span className={`flex items-center gap-1 font-black px-2 py-0.5 text-[9px] uppercase tracking-widest rounded border flex-shrink-0 ${
-                          torrent.source === 'NekoBT' ? 'text-pink-400 bg-pink-500/10 border-pink-500/20' : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+                          torrent.source === 'NekoBT' ? 'text-pink-400 bg-pink-500/10 border-pink-500/20' 
+                          : torrent.source === 'TokyoToshokan' ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
+                          : torrent.source === 'PirateBay' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                          : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
                         }`}>
                           <i className="fa-solid fa-database"></i> {torrent.source}
                         </span>
@@ -264,22 +364,22 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                     {/* Linha do Meio: Bandeiras */}
                     <div className="flex flex-wrap gap-2">
                       {torrent.audio && torrent.audio.length > 0 && (
-                        <div className="flex items-center gap-1 bg-slate-900/60 px-2 py-1 rounded-md border border-white/5" title="Idiomas de Áudio">
+                        <div className="flex items-center gap-1.5 bg-slate-900/60 px-2 py-1 rounded-md border border-white/5" title="Idiomas de Áudio">
                           <i className="fa-solid fa-microphone text-[10px] text-slate-500 mr-1"></i>
                           {torrent.audio.map(l => (
-                            <span key={`audio-${l}`} title={LANG_MAP[l.toLowerCase()]?.name || l} className="text-sm leading-none drop-shadow-md">
-                              {LANG_MAP[l.toLowerCase()]?.flag || '🏳️'}
+                            <span key={`audio-${l}`} title={LANG_MAP[l.toLowerCase()]?.name || l} className="flex items-center drop-shadow-md">
+                              {LANG_MAP[l.toLowerCase()]?.flag || <i className="fa-solid fa-flag text-slate-500 text-[10px]"></i>}
                             </span>
                           ))}
                         </div>
                       )}
                       
                       {torrent.subs && torrent.subs.length > 0 && (
-                        <div className="flex items-center gap-1 bg-slate-900/60 px-2 py-1 rounded-md border border-white/5" title="Idiomas de Legenda">
+                        <div className="flex items-center gap-1.5 bg-slate-900/60 px-2 py-1 rounded-md border border-white/5" title="Idiomas de Legenda">
                           <i className="fa-solid fa-closed-captioning text-[10px] text-slate-500 mr-1"></i>
                           {torrent.subs.map(l => (
-                            <span key={`sub-${l}`} title={LANG_MAP[l.toLowerCase()]?.name || l} className="text-sm leading-none drop-shadow-md">
-                              {LANG_MAP[l.toLowerCase()]?.flag || '🏳️'}
+                            <span key={`sub-${l}`} title={LANG_MAP[l.toLowerCase()]?.name || l} className="flex items-center drop-shadow-md">
+                              {LANG_MAP[l.toLowerCase()]?.flag || <i className="fa-solid fa-flag text-slate-500 text-[10px]"></i>}
                             </span>
                           ))}
                         </div>
