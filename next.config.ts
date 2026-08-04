@@ -71,6 +71,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn-s01.pixel-sus-4k-image.com',
+      },
     ],
   },
   compress: true, // gzip/brotli nos assets

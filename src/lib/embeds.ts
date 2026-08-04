@@ -10,13 +10,24 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz' | 'warezcdn' | 'imagesskill' | 'hls' | 'webtor';
+  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz' | 'warezcdn' | 'imagesskill' | 'hls' | 'webtor' | 'pixelsus';
   url: string;
   server?: string;
   audioLabel?: string;
   type?: 'iframe' | 'video';
   isAsync?: boolean;
 }
+
+// ─────────────────────────────────────────────
+// Pixel Sus API (cdn-s01.pixel-sus-4k-image.com)
+// ─────────────────────────────────────────────
+export const PixelSusAPI = {
+  getEpisodeUrl(slug: string, episode = 1): string {
+    const epPad = episode.toString().padStart(2, '0');
+    const firstLetter = slug.charAt(0).toLowerCase();
+    return `https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}/${epPad}.mp4`;
+  }
+};
 
 // ─────────────────────────────────────────────
 // ImagesSkill HLS API (cdn.imagesskill.com)
@@ -220,6 +231,17 @@ export function getEmbedSources(
     });
   }
   */
+
+  // 0. Pixel Sus (Sushi Animes - MP4 Direto)
+  if (slug) {
+    sources.push({
+      id: 'pixelsus',
+      name: 'Player Sushi (MP4 Direto)',
+      provider: 'pixelsus',
+      url: PixelSusAPI.getEpisodeUrl(slug, episode),
+      type: 'video',
+    });
+  }
 
   // 0. Player HLS Direct Stream (Ultra Rápido)
   if (slug) {
