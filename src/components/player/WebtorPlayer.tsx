@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const BEST_TRACKERS = [
   'udp://tracker.publictracker.xyz:6969/announce',
@@ -47,47 +47,44 @@ interface WebtorPlayerProps {
 }
 
 export default function WebtorPlayer({ magnet, poster, title }: WebtorPlayerProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [activeUrl, setActiveUrl] = useState<string>('');
 
   useEffect(() => {
-    setIsTransitioning(true);
+    // 1. Ao invés de remover o Iframe do DOM (o que causa o crash fatal do Chromium),
+    // nós forçamos o navegador a navegar para uma página vazia. Isso fecha as conexões 
+    // WebRTC e de Mídia graciosamente, acionando o Garbage Collector corretamente!
+    setActiveUrl('about:blank');
     
-    // Quando o magnet muda, limpamos o iframe suavemente (about:blank) 
-    // ANTES de jogar a nova URL. Isso faz o navegador destruir os workers de vídeo antigos graciosamente.
-    if (iframeRef.current) {
-      iframeRef.current.src = 'about:blank';
-    }
-
+    // 2. Após o navegador limpar a memória, injetamos a URL do novo torrent.
     const timer = setTimeout(() => {
-      if (iframeRef.current) {
-        const enhancedMagnet = enhanceMagnetWithTrackers(magnet);
-        const url = new URL('/webtor.html', window.location.origin);
-        url.searchParams.set('magnet', enhancedMagnet);
-        url.searchParams.set('title', title || 'Anime House');
-        
-        iframeRef.current.src = url.toString();
-        setIsTransitioning(false);
-      }
-    }, 300); // 300ms é tempo suficiente para o Chrome fazer o Garbage Collection do iframe anterior
+      const enhancedMagnet = enhanceMagnetWithTrackers(magnet);
+      const url = new URL('/webtor.html', window.location.origin);
+      url.searchParams.set('magnet', enhancedMagnet);
+      url.searchParams.set('title', title || 'Anime House');
+      setActiveUrl(url.toString());
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [magnet, title]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-black relative">
+      {/* O Iframe NUNCA sai do DOM. Ele é a fundação para evitar crash do Chrome */}
       <iframe
-        ref={iframeRef}
+        src={activeUrl}
         className="w-full h-full border-0 outline-none"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />
-      
-      {/* Tela de carregamento/transição por cima do iframe para esconder o piscar de tela */}
-      {isTransitioning && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-50">
-          <div className="text-blue-500 font-bold text-sm tracking-widest uppercase animate-pulse">
-            Trocando de Servidor...
+
+      {/* Tela de loading por cima do iframe quando estamos desconectando */}
+      {(!activeUrl || activeUrl === 'about:blank') && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+            <div className="text-blue-500 font-bold text-sm tracking-widest uppercase animate-pulse">
+              Desconectando Servidores Anteriores...
+            </div>
           </div>
         </div>
       )}
