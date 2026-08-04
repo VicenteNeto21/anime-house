@@ -66,15 +66,9 @@ interface TorrentModalProps {
   onClose: () => void;
   defaultQuery: string;
   onSelectMagnet: (magnetUrl: string) => void;
-  animeTitles?: {
-    romaji?: string;
-    english?: string;
-    native?: string;
-    currentEp?: number;
-  };
 }
 
-export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMagnet, animeTitles }: TorrentModalProps) {
+export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMagnet }: TorrentModalProps) {
   const [query, setQuery] = useState('');
   const [isDublado, setIsDublado] = useState(false);
   const [results, setResults] = useState<TorrentResult[]>([]);
@@ -224,52 +218,6 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                 {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <><span className="hidden sm:inline">Buscar</span><i className="fa-solid fa-search sm:hidden"></i></>}
               </button>
             </form>
-            
-            {/* Chips de Títulos Alternativos */}
-            {animeTitles && (
-              <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-800/50">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mr-1">Títulos:</span>
-                
-                {animeTitles.romaji && (
-                  <button 
-                    onClick={() => {
-                      const q = `${animeTitles.romaji} ${animeTitles.currentEp?.toString().padStart(2, '0')}`;
-                      setQuery(q);
-                      searchNyaa(q);
-                    }}
-                    className="px-2 py-1 bg-slate-800/80 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/30 rounded text-[10px] text-slate-300 hover:text-blue-400 transition-colors"
-                  >
-                    Romaji
-                  </button>
-                )}
-                
-                {animeTitles.english && (
-                  <button 
-                    onClick={() => {
-                      const q = `${animeTitles.english} ${animeTitles.currentEp?.toString().padStart(2, '0')}`;
-                      setQuery(q);
-                      searchNyaa(q);
-                    }}
-                    className="px-2 py-1 bg-slate-800/80 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/30 rounded text-[10px] text-slate-300 hover:text-blue-400 transition-colors"
-                  >
-                    Inglês
-                  </button>
-                )}
-                
-                {animeTitles.native && (
-                  <button 
-                    onClick={() => {
-                      const q = `${animeTitles.native} ${animeTitles.currentEp?.toString().padStart(2, '0')}`;
-                      setQuery(q);
-                      searchNyaa(q);
-                    }}
-                    className="px-2 py-1 bg-slate-800/80 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/30 rounded text-[10px] text-slate-300 hover:text-blue-400 transition-colors"
-                  >
-                    Original
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Results Area */}

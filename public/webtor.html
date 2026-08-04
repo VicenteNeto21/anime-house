@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webtor Player</title>
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
+    #loader { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #020617; transition: opacity 0.5s ease; }
+    .spinner { width: 4rem; height: 4rem; border: 4px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+    .text { color: #60a5fa; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.875rem; animation: pulse 2s infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 50% { opacity: .5; } }
+  </style>
+</head>
+<body>
+  <div id="loader"><div class="spinner"></div><div class="text">Conectando Servidores Torrent...</div></div>
+  <div id="player" style="width: 100%; height: 100%;"></div>
+
+  <script>
+    // Suprime erros para não estourarem no console principal
+    window.onerror = function() { return true; };
+    window.onunhandledrejection = function(e) { e.preventDefault(); };
+
+    // Extrair o Magnet e Title da URL
+    const params = new URLSearchParams(window.location.search);
+    const magnet = params.get('magnet');
+    const title = params.get('title') || 'Anime House';
+
+    if (magnet) {
+      window.webtor = window.webtor || [];
+      window.webtor.push({
+          el: document.getElementById('player'),
+          magnet: magnet,
+          lang: 'pt',
+          theme: 'dark',
+          title: title,
+          poster: '',
+          features: {
+            download: false,
+            chromecast: true,
+            subtitles: true,
+            settings: true,
+            opensubtitles: true // Habilita OpenSubtitles mágico
+          },
+          on: function(e) {
+              if (e.name === window.webtor.INITED) {
+                  const loader = document.getElementById('loader');
+                  if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                  }
+              }
+          }
+      });
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" async></script>
+</body>
+</html>
