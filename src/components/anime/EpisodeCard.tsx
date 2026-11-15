@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Anime, AniListAPI } from '@/lib/api';
 import { WatchHistory } from '@/lib/history';
+import { Clock, Check, Play } from 'lucide-react';
 
 interface EpisodeCardProps {
   anime: Anime;
@@ -80,12 +81,12 @@ export default function EpisodeCard({ anime, hideIfCompleted = false }: EpisodeC
         {/* Top Badges */}
         <div className="absolute top-2 left-2 flex gap-1 z-20">
           <div className="px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded flex items-center gap-1 border border-white/10">
-            <i className="fa-solid fa-clock text-[8px] text-white/70"></i>
+            <Clock className="w-2.5 h-2.5 text-white/70" />
             <span className="text-[9px] font-black text-white uppercase">{formatReleaseTime(anime.airingAt)}</span>
           </div>
           {isWatched && (
             <div className="px-1.5 py-0.5 bg-emerald-600/90 backdrop-blur-md rounded flex items-center gap-1 border border-emerald-500/30 shadow-lg shadow-emerald-600/20">
-              <i className="fa-solid fa-check text-[8px] text-white"></i>
+              <Check className="w-2.5 h-2.5 text-white" />
               <span className="text-[9px] font-black text-white uppercase">Visto</span>
             </div>
           )}
@@ -103,7 +104,7 @@ export default function EpisodeCard({ anime, hideIfCompleted = false }: EpisodeC
         {/* Hover Icon */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
           <div className="w-10 h-10 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-            <i className="fa-solid fa-play text-white ml-0.5"></i>
+            <Play className="w-4 h-4 text-white fill-current ml-0.5" />
           </div>
         </div>
 

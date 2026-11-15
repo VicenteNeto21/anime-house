@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Anime } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
+import { CalendarDays, ChevronDown } from 'lucide-react';
 
 interface AiringSchedule {
   id: number;
@@ -59,7 +60,7 @@ export default function CalendarClient({ schedules }: { schedules: AiringSchedul
       >
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3 text-white font-black uppercase tracking-widest text-[11px]">
-            <i className="fa-solid fa-calendar-day fa-lg"></i>
+            <CalendarDays className="w-5 h-5" />
             <span>Calendário</span>
           </div>
 
@@ -83,7 +84,7 @@ export default function CalendarClient({ schedules }: { schedules: AiringSchedul
           </div>
         </div>
 
-        <i className={`fa-solid fa-chevron-down text-white/70 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
+        <ChevronDown className={`w-5 h-5 text-white/70 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {/* Content Area */}

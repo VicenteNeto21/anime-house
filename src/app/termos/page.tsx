@@ -1,4 +1,5 @@
 import React from 'react';
+import { FileText, Check } from 'lucide-react';
 
 export const metadata = {
   title: 'Terms of Service | Anime House',
@@ -29,7 +30,7 @@ export default function TermsPage() {
           
           <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <i className="fa-solid fa-file-contract text-indigo-500"></i>
+              <FileText className="w-5 h-5 text-indigo-500" />
               Aceitação dos Termos
             </h2>
             <p className="mb-4">
@@ -77,7 +78,7 @@ export default function TermsPage() {
                 "Não realizar qualquer atividade ilegal utilizando os links aqui indexados."
               ].map((item, index) => (
                 <li key={index} className="flex gap-4 items-start">
-                  <i className="fa-solid fa-check text-indigo-500 mt-1"></i>
+                  <Check className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}

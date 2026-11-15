@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { sanitizeMagnetUri } from '@/lib/security/magnet';
 
 const BEST_TRACKERS = [
   'udp://zer0day.ch:1337/announce',
@@ -130,6 +131,12 @@ export default function WebtorPlayer({ magnet, poster, title }: WebtorPlayerProp
   const [activeUrl, setActiveUrl] = useState<string>('');
 
   useEffect(() => {
+    const cleanMagnet = sanitizeMagnetUri(magnet);
+    if (!cleanMagnet) {
+      setActiveUrl('');
+      return;
+    }
+
     // 1. Ao invés de remover o Iframe do DOM (o que causa o crash fatal do Chromium),
     // nós forçamos o navegador a navegar para uma página vazia. Isso fecha as conexões 
     // WebRTC e de Mídia graciosamente, acionando o Garbage Collector corretamente!
@@ -138,7 +145,7 @@ export default function WebtorPlayer({ magnet, poster, title }: WebtorPlayerProp
     // 2. Após o navegador limpar a memória, injetamos a URL do novo torrent.
     // Aumentado para 400ms para dar tempo absoluto do Chromium matar os WebRTCs
     const timer = setTimeout(() => {
-      const enhancedMagnet = enhanceMagnetWithTrackers(magnet);
+      const enhancedMagnet = enhanceMagnetWithTrackers(cleanMagnet);
       const url = new URL('/webtor.html', window.location.origin);
       url.searchParams.set('magnet', enhancedMagnet);
       url.searchParams.set('title', title || 'Anime House');

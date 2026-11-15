@@ -2,7 +2,7 @@ import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 
 const handler = NextAuth({
-  debug: true,
+  debug: process.env.NODE_ENV !== 'production',
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
@@ -37,8 +37,9 @@ const handler = NextAuth({
       },
       authorization: {
         url: "https://anilist.co/api/v2/oauth/authorize",
-        params: { response_type: "code", scope: "read" },
+        params: { response_type: "code" },
       },
+      checks: ["state"],
       userinfo: {
         url: "https://graphql.anilist.co",
         async request({ tokens }) {
@@ -65,7 +66,7 @@ const handler = NextAuth({
           banner: profile.bannerImage,
         };
       },
-      clientId: process.env.NEXT_PUBLIC_ANILIST_CLIENT_ID,
+      clientId: process.env.ANILIST_CLIENT_ID || process.env.NEXT_PUBLIC_ANILIST_CLIENT_ID,
       clientSecret: process.env.ANILIST_CLIENT_SECRET,
     },
   ],
@@ -73,18 +74,18 @@ const handler = NextAuth({
     signIn: '/login',
   },
   callbacks: {
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token;
         token.provider = account.provider;
       }
       return token;
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub;
-        session.accessToken = token.accessToken;
-        session.provider = token.provider;
+        (session.user as { id?: string }).id = token.sub;
+        (session as { accessToken?: unknown }).accessToken = token.accessToken;
+        (session as { provider?: unknown }).provider = token.provider;
       }
       return session;
     },

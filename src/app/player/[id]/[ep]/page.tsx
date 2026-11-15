@@ -12,6 +12,31 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import dynamic from 'next/dynamic';
 import TorrentModal from '@/components/player/TorrentModal';
 import { AniSkipAPI, SkipTime } from '@/lib/aniskip';
+import { 
+  AlertTriangle, 
+  VideoOff, 
+  SkipBack, 
+  SkipForward, 
+  Magnet, 
+  Server, 
+  ChevronDown, 
+  Check, 
+  Subtitles, 
+  Mic, 
+  Sparkles, 
+  Maximize, 
+  Minimize, 
+  ChevronsRight, 
+  ChevronsLeft, 
+  Star, 
+  Clock, 
+  BookOpen, 
+  Gem, 
+  ExternalLink, 
+  Search, 
+  Play, 
+  type LucideIcon 
+} from 'lucide-react';
 
 const CustomVideoPlayer = dynamic(() => import('@/components/player/CustomVideoPlayer'), { ssr: false });
 const WebtorPlayer = dynamic(() => import('@/components/player/WebtorPlayer'), { ssr: false });
@@ -249,7 +274,7 @@ export default function PlayerPage() {
     return (
       <div className="flex-grow flex items-center justify-center min-h-[80vh]">
         <div className="text-center">
-          <i className="fa-solid fa-triangle-exclamation text-4xl text-red-500/60 mb-4" />
+          <AlertTriangle className="w-10 h-10 text-red-500/60 mx-auto mb-4" />
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
             {error || 'Série não encontrada.'}
           </p>
@@ -299,26 +324,24 @@ export default function PlayerPage() {
 
             {/* Player Iframe Container */}
             <div className="relative z-10 w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl shadow-black/50 group">
-              {activeSource !== 'webtor' && (tmdbLoading || !tmdbId) ? (
+              {tmdbLoading ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950">
-                  {tmdbLoading ? (
-                    <>
-                      <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                        Buscando fontes de vídeo...
-                      </p>
-                    </>
-                  ) : (
-                    <div className="text-center px-6">
-                      <i className="fa-solid fa-film-slash text-3xl text-slate-700 mb-4" />
-                      <p className="text-slate-500 text-xs font-bold mb-2">
-                        Nenhuma fonte de vídeo encontrada para este anime.
-                      </p>
-                      <p className="text-slate-600 text-[10px]">
-                        O TMDB ID não foi localizado. Tente um anime diferente.
-                      </p>
-                    </div>
-                  )}
+                  <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                    Buscando fontes de vídeo...
+                  </p>
+                </div>
+              ) : displaySources.length === 0 ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950">
+                  <div className="text-center px-6">
+                    <VideoOff className="w-8 h-8 text-slate-700 mx-auto mb-4" />
+                    <p className="text-slate-500 text-xs font-bold mb-2">
+                      Nenhuma fonte de vídeo encontrada para este anime.
+                    </p>
+                    <p className="text-slate-600 text-[10px]">
+                      O TMDB ID não foi localizado e não há servidores alternativos. Tente um anime diferente.
+                    </p>
+                  </div>
                 </div>
               ) : isResolvingSource ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950">
@@ -354,7 +377,7 @@ export default function PlayerPage() {
                   className="absolute inset-0 w-full h-full"
                   allowFullScreen
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
+                  sandbox="allow-scripts allow-forms allow-presentation allow-popups"
                   title={`${anime.title} - Episódio ${currentEp}`}
                 />
               )}
@@ -370,8 +393,9 @@ export default function PlayerPage() {
                   disabled={!hasPrev}
                   className="w-9 h-9 flex items-center justify-center bg-slate-900/80 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Episódio anterior"
+                  aria-label="Episódio anterior"
                 >
-                  <i className="fa-solid fa-backward-step text-xs" />
+                  <SkipBack className="w-4 h-4" />
                 </button>
 
                 <div className="px-4 py-2 bg-slate-900/80 border border-white/5 rounded-xl">
@@ -389,8 +413,9 @@ export default function PlayerPage() {
                   disabled={!hasNext}
                   className="w-9 h-9 flex items-center justify-center bg-slate-900/80 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Próximo episódio"
+                  aria-label="Próximo episódio"
                 >
-                  <i className="fa-solid fa-forward-step text-xs" />
+                  <SkipForward className="w-4 h-4" />
                 </button>
               </div>
 
@@ -402,7 +427,7 @@ export default function PlayerPage() {
                 onClick={() => setShowTorrentModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-all ml-auto md:ml-0"
               >
-                <i className="fa-solid fa-magnet text-indigo-400" />
+                <Magnet className="w-3.5 h-3.5 text-indigo-400" />
                 {webtorMagnet ? 'Trocar Torrent/Seed' : 'Buscar Torrent'}
               </button>
 
@@ -413,9 +438,9 @@ export default function PlayerPage() {
                     onClick={() => setShowServerMenu(!showServerMenu)}
                     className="flex items-center gap-2 px-4 py-2 bg-slate-900/80 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:bg-slate-800 transition-all"
                   >
-                    <i className="fa-solid fa-server text-blue-500 text-[10px]" />
+                    <Server className="w-3 h-3 text-blue-500" />
                     {currentSource?.name || 'Servidor'}
-                    <i className={`fa-solid fa-chevron-down text-[8px] text-slate-500 transition-transform ${showServerMenu ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${showServerMenu ? 'rotate-180' : ''}`} />
                   </button>
 
                   {showServerMenu && (
@@ -445,7 +470,7 @@ export default function PlayerPage() {
                             )}
                           </div>
                           {activeSource === source.id && (
-                            <i className="fa-solid fa-check text-[8px] text-blue-500" />
+                            <Check className="w-3 h-3 text-blue-500" />
                           )}
                         </button>
                       ))}
@@ -457,24 +482,27 @@ export default function PlayerPage() {
               {/* Audio Selector */}
               <div className="flex items-center gap-1 bg-slate-900/80 border border-white/5 rounded-xl p-1">
                 {([
-                  { value: 'leg' as AudioOption, label: 'LEG', icon: 'fa-closed-captioning' },
-                  { value: 'dub' as AudioOption, label: 'DUB', icon: 'fa-microphone' },
-                  { value: 'default' as AudioOption, label: 'AUTO', icon: 'fa-wand-magic-sparkles' },
-                ] as const).map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleAudioChange(opt.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
-                      audio === opt.value
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-500 hover:text-white hover:bg-white/5'
-                    }`}
-                    title={opt.value === 'leg' ? 'Legendado' : opt.value === 'dub' ? 'Dublado' : 'Automático'}
-                  >
-                    <i className={`fa-solid ${opt.icon} text-[8px]`} />
-                    {opt.label}
-                  </button>
-                ))}
+                  { value: 'leg' as AudioOption, label: 'LEG', icon: Subtitles },
+                  { value: 'dub' as AudioOption, label: 'DUB', icon: Mic },
+                  { value: 'default' as AudioOption, label: 'AUTO', icon: Sparkles },
+                ] as const).map((opt) => {
+                  const OptIcon = opt.icon;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleAudioChange(opt.value)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                        audio === opt.value
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                          : 'text-slate-500 hover:text-white hover:bg-white/5'
+                      }`}
+                      title={opt.value === 'leg' ? 'Legendado' : opt.value === 'dub' ? 'Dublado' : 'Automático'}
+                    >
+                      <OptIcon className="w-3 h-3" />
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Right-side controls */}
@@ -484,8 +512,9 @@ export default function PlayerPage() {
                   onClick={() => setIsTheaterMode(!isTheaterMode)}
                   className="w-9 h-9 flex items-center justify-center bg-slate-900/80 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
                   title={isTheaterMode ? 'Modo Normal' : 'Modo Teatro'}
+                  aria-label={isTheaterMode ? 'Modo Normal' : 'Modo Teatro'}
                 >
-                  <i className={`fa-solid ${isTheaterMode ? 'fa-compress' : 'fa-expand'} text-xs`} />
+                  {isTheaterMode ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                 </button>
 
                 {/* Toggle Sidebar */}
@@ -493,8 +522,9 @@ export default function PlayerPage() {
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   className="hidden lg:flex w-9 h-9 items-center justify-center bg-slate-900/80 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
                   title={sidebarOpen ? 'Esconder episódios' : 'Mostrar episódios'}
+                  aria-label={sidebarOpen ? 'Esconder episódios' : 'Mostrar episódios'}
                 >
-                  <i className={`fa-solid ${sidebarOpen ? 'fa-angles-right' : 'fa-angles-left'} text-xs`} />
+                  {sidebarOpen ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -560,21 +590,21 @@ export default function PlayerPage() {
 
                     {anime.rating && anime.rating !== 'N/A' && anime.rating !== '0' && (
                       <span className="px-2 py-1 bg-yellow-500/10 rounded-md border border-yellow-500/20 text-yellow-500 flex items-center gap-1.5 shadow-sm shadow-yellow-500/5">
-                        <i className="fa-solid fa-star text-[9px]" />
+                        <Star className="w-2.5 h-2.5 fill-current" />
                         {anime.rating}%
                       </span>
                     )}
 
                     {anime.duration && anime.duration !== 'N/A' && (
                       <span className="px-2 py-1 bg-blue-500/10 rounded-md border border-blue-500/20 text-blue-400 flex items-center gap-1.5">
-                        <i className="fa-solid fa-clock text-[9px]" />
+                        <Clock className="w-2.5 h-2.5" />
                         {anime.duration}
                       </span>
                     )}
 
                     {anime.source && anime.source !== 'N/A' && (
                       <span className="px-2 py-1 bg-purple-500/10 rounded-md border border-purple-500/20 text-purple-400 flex items-center gap-1.5">
-                        <i className="fa-solid fa-book-open text-[9px]" />
+                        <BookOpen className="w-2.5 h-2.5" />
                         {anime.source}
                       </span>
                     )}
@@ -595,9 +625,9 @@ export default function PlayerPage() {
             {anime.externalLinks && anime.externalLinks.filter(l => l.type === 'STREAMING').length > 0 && (
               <details className="bg-slate-900/20 border border-white/5 rounded-2xl overflow-hidden group">
                 <summary className="flex items-center gap-3 px-5 py-3 cursor-pointer text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
-                  <i className="fa-solid fa-gem text-blue-500/50" />
+                  <Gem className="w-3.5 h-3.5 text-blue-500/50" />
                   Plataformas Oficiais
-                  <i className="fa-solid fa-chevron-down text-[8px] ml-auto transition-transform group-open:rotate-180" />
+                  <ChevronDown className="w-2.5 h-2.5 ml-auto transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="px-5 pb-4 flex flex-wrap gap-2">
                   {anime.externalLinks
@@ -619,7 +649,7 @@ export default function PlayerPage() {
                           className="rounded"
                         />
                         {link.site}
-                        <i className="fa-solid fa-arrow-up-right-from-square text-[7px] opacity-40" />
+                        <ExternalLink className="w-2.5 h-2.5 opacity-40" />
                       </a>
                     ))}
                 </div>
@@ -703,7 +733,7 @@ function EpisodeSidebar({
         {/* Search episodes */}
         {totalEps > 24 && (
           <div className="relative">
-            <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-600" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
             <input
               type="text"
               value={searchQuery}
@@ -747,7 +777,7 @@ function EpisodeSidebar({
                   {isActive && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                       <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-                        <i className="fa-solid fa-play text-[6px] text-white ml-0.5" />
+                        <Play className="w-2.5 h-2.5 text-white fill-current ml-0.5" />
                       </div>
                     </div>
                   )}

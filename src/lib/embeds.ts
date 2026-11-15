@@ -213,7 +213,7 @@ export function getEmbedSources(
   tmdbId: string | number,
   season = 1,
   episode = 1,
-  audio: AudioOption = 'default',
+  _audio: AudioOption = 'default',
   slug?: string
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
@@ -384,7 +384,7 @@ export function getEmbedSources(
  */
 export function getMovieEmbedSources(
   tmdbId: string | number,
-  audio: AudioOption = 'default'
+  _audio: AudioOption = 'default'
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
 

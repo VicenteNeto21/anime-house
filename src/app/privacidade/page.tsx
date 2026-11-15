@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShieldCheck, Server, Cookie } from 'lucide-react';
 
 export const metadata = {
   title: 'Data Protection & Privacy Policy | Anime House',
@@ -29,7 +30,7 @@ export default function PrivacyPage() {
 
           <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <i className="fa-solid fa-user-shield text-blue-500"></i>
+              <ShieldCheck className="w-5 h-5 text-blue-500" />
               Compromisso com o Titular
             </h2>
             <p className="mb-4">
@@ -46,7 +47,7 @@ export default function PrivacyPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-6 bg-white/5 border border-white/5 rounded-2xl">
                 <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                  <i className="fa-solid fa-server text-blue-500 text-sm"></i> Dados Técnicos
+                  <Server className="w-4 h-4 text-blue-500" /> Dados Técnicos
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Endereços IP, tipo de navegador, sistema operacional e logs de acesso. Estes dados são usados exclusivamente para prevenção de ataques e diagnósticos de rede.
@@ -54,7 +55,7 @@ export default function PrivacyPage() {
               </div>
               <div className="p-6 bg-white/5 border border-white/5 rounded-2xl">
                 <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                  <i className="fa-solid fa-cookie text-blue-500 text-sm"></i> Cookies e Preferências
+                  <Cookie className="w-4 h-4 text-blue-500" /> Cookies e Preferências
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Utilizamos cookies locais para salvar seu progresso nos episódios e suas listas personalizadas, sem a necessidade de contas obrigatórias.

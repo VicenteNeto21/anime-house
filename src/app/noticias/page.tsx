@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { NewsAPI } from '@/lib/api';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { ChevronRight, ArrowLeft, ArrowRight, Newspaper } from 'lucide-react';
 
 export const metadata = {
   title: 'Portal de Notícias | Anime House',
@@ -91,7 +92,7 @@ export default async function NoticiasPage({
                         Ler matéria completa
                       </span>
                       <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <i className="fa-solid fa-chevron-right text-xs"></i>
+                        <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
@@ -106,7 +107,7 @@ export default async function NoticiasPage({
                   href={`/noticias?page=${currentPage - 1}`}
                   className="flex items-center gap-2 px-6 py-3 bg-slate-900 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-blue-500 transition-all"
                 >
-                  <i className="fa-solid fa-arrow-left"></i> Anterior
+                  <ArrowLeft className="w-4 h-4" /> Anterior
                 </Link>
               )}
               
@@ -130,22 +131,22 @@ export default async function NoticiasPage({
                   href={`/noticias?page=${currentPage + 1}`}
                   className="flex items-center gap-2 px-6 py-3 bg-slate-900 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-blue-500 transition-all"
                 >
-                  Próximo <i className="fa-solid fa-arrow-right"></i>
+                  Próximo <ArrowRight className="w-4 h-4" />
                 </Link>
               )}
             </div>
           </>
         ) : (
           <div className="text-center py-20">
-            <i className="fa-solid fa-newspaper text-6xl text-slate-800 mb-6"></i>
+            <Newspaper className="w-16 h-16 text-slate-800 mx-auto mb-6" />
             <p className="text-slate-500 font-bold uppercase tracking-widest">Nenhuma notícia encontrada.</p>
           </div>
         )}
 
         {/* Newsletter Section */}
         <div className="mt-20 p-12 bg-blue-600/5 border border-blue-600/10 rounded-3xl text-center relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-8 opacity-10">
-             <i className="fa-solid fa-newspaper text-8xl text-blue-600"></i>
+           <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+             <Newspaper className="w-32 h-32 text-blue-600" />
            </div>
            <h3 className="text-2xl font-black text-white uppercase mb-4 tracking-tighter">Receba as novidades por e-mail</h3>
            <p className="text-slate-400 max-w-md mx-auto mb-8 text-sm">

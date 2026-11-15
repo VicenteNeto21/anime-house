@@ -18,6 +18,7 @@ export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<Plyr | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const wakeLockRef = useRef<any>(null);
   
   const [showSkip, setShowSkip] = useState(false);
   const [skipTarget, setSkipTarget] = useState<number>(0);
@@ -80,7 +81,33 @@ export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip
     }
 
     // Eventos
+    const requestWakeLock = async () => {
+      if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && !wakeLockRef.current) {
+        try {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        } catch {
+          // Wake lock negado ou não suportado
+        }
+      }
+    };
+
+    const releaseWakeLock = () => {
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      }
+    };
+
+    player.on('play', () => {
+      requestWakeLock();
+    });
+
+    player.on('pause', () => {
+      releaseWakeLock();
+    });
+
     player.on('ended', () => {
+      releaseWakeLock();
       if (onEndedRef.current) onEndedRef.current();
     });
 
@@ -106,6 +133,7 @@ export default function CustomVideoPlayer({ url, title, poster, onEnded, aniskip
     });
 
     return () => {
+      releaseWakeLock();
       if (hlsRef.current) {
         hlsRef.current.destroy();
       }

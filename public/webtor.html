@@ -24,14 +24,17 @@
 
     // Extrair o Magnet e Title da URL
     const params = new URLSearchParams(window.location.search);
-    const magnet = params.get('magnet');
-    const title = params.get('title') || 'Anime House';
+    const rawMagnet = params.get('magnet');
+    const title = (params.get('title') || 'Anime House').slice(0, 100);
 
-    if (magnet) {
+    // Validação estrita: apenas URIs magnet legítimas
+    const isSafeMagnet = rawMagnet && /^magnet:\?xt=urn:bt[ihm]/i.test(rawMagnet) && !/[<>'"`]/g.test(rawMagnet);
+
+    if (isSafeMagnet) {
       window.webtor = window.webtor || [];
       window.webtor.push({
           el: document.getElementById('player'),
-          magnet: magnet,
+          magnet: rawMagnet,
           lang: 'pt',
           theme: 'dark',
           title: title,

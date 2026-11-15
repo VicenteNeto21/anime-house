@@ -6,7 +6,11 @@ import FavoriteButton from '@/components/anime/FavoriteButton';
 import AddToList from '@/components/anime/AddToList';
 import EpisodeList from '@/components/anime/EpisodeList';
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { Star, List, Flame, Heart, Tv, Play } from 'lucide-react';
+
+export const revalidate = 86400; // Cache ISR por 24 horas
 
 // 1. Metadata Dinâmico para SEO (Google Busca)
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -35,13 +39,18 @@ export default async function AnimeDetailsPage({
   const { id } = await params;
   const anime = await AniListAPI.getDetails(id);
 
-  if (!anime) return <div>Anime não encontrado.</div>;
+  if (!anime) {
+    notFound();
+  }
 
   // 2. Dados Estruturados (Schema.org) para o Robô do Google
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "TVSeries",
     "name": anime.title,
+    "url": `https://animehouse.com.br/anime/${id}`,
+    "inLanguage": "ja",
+    "subtitleLanguage": "pt-BR",
     "image": anime.poster,
     "description": anime.description?.replace(/<[^>]*>/g, ''),
     "genre": anime.genres,
@@ -107,7 +116,7 @@ export default async function AnimeDetailsPage({
                     {anime.year}
                   </span>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 text-yellow-500 rounded-lg border border-yellow-500/20 backdrop-blur-md">
-                    <i className="fa-solid fa-star text-[9px]"></i>
+                    <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" />
                     <span className="text-[10px] md:text-[11px] font-black">{anime.rating}</span>
                   </div>
                 </div>
@@ -122,7 +131,7 @@ export default async function AnimeDetailsPage({
                   href={`/player/${anime.id}-${AniListAPI.slugify(anime.title)}/1`}
                   className="flex-grow sm:flex-grow-0 h-14 flex items-center justify-center gap-3 px-10 bg-blue-600 hover:bg-blue-500 rounded-2xl text-white font-black uppercase text-xs tracking-widest transition-all hover:scale-105 active:scale-95"
                 >
-                  <i className="fa-solid fa-list"></i>
+                  <List className="w-4 h-4" />
                   Guia de Episódios
                 </Link>
 
@@ -138,7 +147,7 @@ export default async function AnimeDetailsPage({
 
               {anime.description && (
                 <p className="hidden md:block text-slate-400 text-sm font-medium leading-relaxed max-w-2xl line-clamp-2 opacity-80 italic">
-                  "{anime.description.replace(/<[^>]*>?/gm, '').slice(0, 180)}..."
+                  &ldquo;{anime.description.replace(/<[^>]*>?/gm, '').slice(0, 180)}...&rdquo;
                 </p>
               )}
             </div>
@@ -165,14 +174,14 @@ export default async function AnimeDetailsPage({
                   <div className="bg-slate-800/40 rounded-2xl p-3 border border-white/5">
                     <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Popularidade</label>
                     <div className="flex items-center gap-2">
-                      <i className="fa-solid fa-fire text-orange-500 text-[10px]"></i>
+                      <Flame className="w-3 h-3 text-orange-500" />
                       <p className="text-xs font-black text-white">{anime.popularity?.toLocaleString() || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="bg-slate-800/40 rounded-2xl p-3 border border-white/5">
                     <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Favoritos</label>
                     <div className="flex items-center gap-2">
-                      <i className="fa-solid fa-heart text-red-500 text-[10px]"></i>
+                      <Heart className="w-3 h-3 text-red-500 fill-red-500" />
                       <p className="text-xs font-black text-white">{anime.favorites?.toLocaleString() || 'N/A'}</p>
                     </div>
                   </div>
@@ -245,7 +254,7 @@ export default async function AnimeDetailsPage({
             {/* 0. Official Streaming Platforms Section */}
             <section id="official-streams" className="bg-slate-900/40 border border-white/5 rounded-3xl p-6 md:p-8">
               <h3 className="text-xl font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
-                <i className="fa-solid fa-tv text-blue-500 text-2xl"></i>
+                <Tv className="w-6 h-6 text-blue-500" />
                 Assista Oficialmente
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -281,7 +290,7 @@ export default async function AnimeDetailsPage({
                               className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-white"
                               style={{ backgroundColor: iconColor + '33', border: `1px solid ${iconColor}44` }}
                             >
-                              <i className="fa-solid fa-play text-xs" style={{ color: iconColor }} />
+                              <Play className="w-3.5 h-3.5" style={{ color: iconColor, fill: iconColor }} />
                             </div>
                           )}
                           <span className="text-xs font-black text-slate-200 group-hover:text-white uppercase truncate">

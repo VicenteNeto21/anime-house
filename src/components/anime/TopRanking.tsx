@@ -1,6 +1,7 @@
 import { AniListAPI, Anime } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Star, ChevronRight, Trophy } from 'lucide-react';
 
 export default async function TopRanking() {
   const { media: topAnimes } = await AniListAPI.browse({ 
@@ -42,7 +43,7 @@ export default async function TopRanking() {
           </h4>
           <div className="flex items-center gap-3 mt-1">
             <div className="flex items-center gap-1 text-yellow-500 text-[9px] font-black uppercase">
-              <i className="fa-solid fa-star text-[8px]"></i>
+              <Star className="w-2.5 h-2.5 fill-current" />
               <span>{anime.rating}</span>
             </div>
             <span className="text-[9px] text-slate-500 font-black uppercase tracking-tighter">
@@ -52,7 +53,7 @@ export default async function TopRanking() {
         </div>
 
         <div className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-800/50 border border-white/5 group-hover:bg-blue-600 transition-colors">
-          <i className="fa-solid fa-chevron-right text-[10px] text-white/50 group-hover:text-white"></i>
+          <ChevronRight className="w-3 h-3 text-white/50 group-hover:text-white" />
         </div>
       </Link>
     );
@@ -63,7 +64,7 @@ export default async function TopRanking() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-trophy text-yellow-500 text-xl"></i>
+            <Trophy className="w-5 h-5 text-yellow-500" />
             <h2 className="text-xl font-black uppercase tracking-tighter text-white">Ranking Global</h2>
             <span className="px-2 py-0.5 bg-slate-800 text-[8px] font-black text-slate-400 rounded uppercase border border-white/5 tracking-widest ml-2">
               AniList Score

@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { NewsAPI } from '@/lib/api';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 
 export default async function NewsSection() {
   const { news } = await NewsAPI.getLatestNews(1, 4);
@@ -21,7 +22,7 @@ export default async function NewsSection() {
           href="/noticias" 
           className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2 group"
         >
-          Ver Todas <i className="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+          Ver Todas <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
 
@@ -59,7 +60,7 @@ export default async function NewsSection() {
               </p>
               <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5 text-[9px] font-black text-blue-500 uppercase tracking-widest">
                 <span>Ler Matéria</span>
-                <i className="fa-solid fa-chevron-right"></i>
+                <ChevronRight className="w-3.5 h-3.5" />
               </div>
             </div>
           </a>

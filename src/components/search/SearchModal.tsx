@@ -66,10 +66,16 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-lg flex items-start justify-center pt-32 px-6">
-      <div className="w-full max-w-3xl">
+    <div
+      className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-lg flex items-start justify-center pt-32 px-6"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Busca de animes"
+    >
+      <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-4 bg-slate-900/80 p-6 rounded-2xl border border-white/10 shadow-2xl">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
           <input
             autoFocus
             type="text"
@@ -77,9 +83,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="O que você quer assistir hoje?"
             className="w-full bg-transparent border-none text-xl focus:ring-0 outline-none text-white placeholder-slate-600"
+            aria-label="Buscar animes por título"
           />
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white cursor-pointer"
+            aria-label="Fechar busca"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
           </button>
         </div>
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isSafePublicUrl } from '@/lib/security/ssrf';
 
 export async function GET(request: Request) {
   try {
@@ -12,23 +13,34 @@ export async function GET(request: Request) {
       );
     }
 
+    const check = isSafePublicUrl(url);
+    if (!check.valid) {
+      return NextResponse.json(
+        { error: check.error || 'URL inválida ou não permitida' },
+        { status: 403 }
+      );
+    }
+
     // Chama o microserviço Python (extrator)
-    // Em producao usar process.env.EXTRACTOR_SERVICE_URL
-    const extractorUrl = process.env.EXTRACTOR_SERVICE_URL || 'http://localhost:8000';
-    
-    console.log(`[Extrator DooPlay] Chamando microserviço para: ${url}`);
-    
+    const extractorUrl = process.env.EXTRACTOR_SERVICE_URL;
+    if (!extractorUrl) {
+      return NextResponse.json(
+        { error: 'EXTRACTOR_SERVICE_URL não configurado no servidor' },
+        { status: 503 }
+      );
+    }
+
     const response = await fetch(`${extractorUrl}/extract`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('[Extrator DooPlay] Erro do microserviço:', errorData);
       return NextResponse.json(
         { error: 'Falha ao extrair vídeo pelo microserviço', details: errorData },
         { status: 502 }
@@ -37,11 +49,10 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     return NextResponse.json(data);
-
-  } catch (error) {
-    console.error('[Extrator DooPlay] Erro fatal:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro interno';
     return NextResponse.json(
-      { error: 'Erro interno ao processar a extração' },
+      { error: 'Erro ao processar a extração', details: message },
       { status: 500 }
     );
   }
