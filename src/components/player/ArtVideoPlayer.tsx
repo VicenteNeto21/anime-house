@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
-// @ts-ignore
-import artplayerPluginHlsQualityRaw from 'artplayer-plugin-hls-quality';
 import { SkipTime } from '@/lib/aniskip';
-
-const hlsQualityPlugin = (artplayerPluginHlsQualityRaw as any)?.default || artplayerPluginHlsQualityRaw;
 
 export interface ArtVideoPlayerProps {
   url: string;
@@ -83,28 +79,11 @@ export default function ArtVideoPlayer({
       }
     };
 
-    // Plugins list
-    const plugins: any[] = [];
-    if (isM3U8 && typeof hlsQualityPlugin === 'function') {
-      try {
-        plugins.push(
-          hlsQualityPlugin({
-            control: true,
-            setting: true,
-            getResolution: (level: any) => (level?.height ? `${level.height}p` : 'Auto'),
-            title: 'Qualidade',
-            auto: 'Automático',
-          })
-        );
-      } catch (err) {
-        console.warn('HLS Quality plugin registration failed:', err);
-      }
-    }
-
     // Initialize Artplayer
     const art = new Artplayer({
       container: containerRef.current,
       url,
+      type: isM3U8 ? 'm3u8' : undefined,
       poster: poster || '',
       volume: 0.8,
       isLive: false,
@@ -129,7 +108,6 @@ export default function ArtVideoPlayer({
       theme: '#2563eb',
       lang: 'pt',
       highlight: highlights,
-      plugins,
       customType: {
         m3u8: (video: HTMLVideoElement, m3u8Url: string, artInstance: any) => {
           if (Hls.isSupported()) {
@@ -144,6 +122,55 @@ export default function ArtVideoPlayer({
             hls.loadSource(m3u8Url);
             hls.attachMedia(video);
             artInstance.hls = hls;
+
+            // Suporte nativo a troca de qualidade quando o manifesto carregar
+            hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+              if (data.levels && data.levels.length > 1) {
+                const selector = data.levels.map((level, index) => ({
+                  html: `${level.height || 'Auto'}p`,
+                  level: index,
+                  default: index === hls.currentLevel,
+                }));
+                selector.unshift({
+                  html: 'Automático',
+                  level: -1,
+                  default: hls.currentLevel === -1,
+                });
+                artInstance.setting.update({
+                  name: 'quality',
+                  width: 160,
+                  html: 'Qualidade',
+                  tooltip: 'Automático',
+                  selector,
+                  onSelect: (item: any) => {
+                    hls.currentLevel = item.level;
+                    return item.html;
+                  },
+                });
+              }
+            });
+
+            // Tratamento de erros e auto-recuperação do HLS
+            hls.on(Hls.Events.ERROR, (_event, data) => {
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    console.warn('[HLS] Falha de rede, tentando reconectar...', data);
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    console.warn('[HLS] Falha de mídia, recuperando buffer...', data);
+                    hls.recoverMediaError();
+                    break;
+                  default:
+                    console.error('[HLS] Erro fatal irrecuperável:', data);
+                    artInstance.notice.show = 'Erro ao carregar o fluxo de vídeo deste anime.';
+                    hls.destroy();
+                    break;
+                }
+              }
+            });
+
             artInstance.on('destroy', () => {
               hls.destroy();
             });
