@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@consumet/extensions": "^1.8.8",
     "@google/genai": "^1.51.0",
     "@webtor/player-sdk-js": "^0.2.15",
     "artplayer": "^5.4.0",
