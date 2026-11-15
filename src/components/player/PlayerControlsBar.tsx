@@ -132,8 +132,8 @@ export default function PlayerControlsBar({
         {hasActiveTorrent ? 'Trocar Torrent/Seed' : 'Buscar Torrent'}
       </button>
 
-      {/* Server Selector Dropdown */}
-      {sources.length > 0 && (
+      {/* Server Selector or Active Server Badge */}
+      {sources.length > 1 ? (
         <div className="relative" ref={serverMenuRef}>
           <button
             onClick={onToggleServerMenu}
@@ -191,7 +191,12 @@ export default function PlayerControlsBar({
             </div>
           )}
         </div>
-      )}
+      ) : sources.length === 1 ? (
+        <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-800/80 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 select-none">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="truncate max-w-[140px] md:max-w-none">{sources[0].name}</span>
+        </div>
+      ) : null}
 
       {/* Audio Selector Tabs */}
       <div className="flex items-center bg-slate-800/80 p-0.5 rounded-xl border border-white/5">

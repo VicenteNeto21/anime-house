@@ -63,11 +63,10 @@ export default function PlayerPage() {
   const [loading, setLoading] = useState(true);
   const [tmdbLoading, setTmdbLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isResolvingSource, setIsResolvingSource] = useState(false);
 
   // Player state
   const [sources, setSources] = useState<EmbedSource[]>([]);
-  const [activeSource, setActiveSource] = useState<string>('embedplay');
+  const [activeSource, setActiveSource] = useState<string>('maximaimg');
   const [audio, setAudio] = useState<AudioOption>('leg');
   const [showServerMenu, setShowServerMenu] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -138,16 +137,17 @@ export default function PlayerPage() {
     findTmdbId();
   }, [anime]);
 
-  // 3. Update embed sources
+  // 3. Update streaming sources
   useEffect(() => {
-    if (tmdbLoading) return;
-    const embedSources = getEmbedSources(tmdbId || '', 1, currentEp, audio, slug);
-    if (embedSources.length > 0 && !embedSources.find((s) => s.id === activeSource)) {
-      setActiveSource(embedSources[0].id);
+    if (!anime) return;
+    const effectiveSlug = slug || AniListAPI.slugify(anime.titleRomaji || anime.titleEnglish || anime.title);
+    const streamSources = getEmbedSources(tmdbId || '', 1, currentEp, audio, effectiveSlug);
+    if (streamSources.length > 0 && !streamSources.find((s) => s.id === activeSource)) {
+      setActiveSource(streamSources[0].id);
     }
-    setSources(embedSources);
+    setSources(streamSources);
     setIframeKey((prev) => prev + 1);
-  }, [tmdbId, currentEp, audio, slug, tmdbLoading]);
+  }, [anime, slug, tmdbId, currentEp, audio]);
 
   // 4. Save watch history
   useEffect(() => {
@@ -222,43 +222,13 @@ export default function PlayerPage() {
   }, [hasNext]);
 
   // Handle server source change
-  const handleSourceChange = async (sourceId: string) => {
+  const handleSourceChange = (sourceId: string) => {
     const source = displaySources.find((s) => s.id === sourceId);
     if (!source) return;
 
     setActiveSource(sourceId);
     setShowServerMenu(false);
-
-    if (source.isAsync) {
-      setIsResolvingSource(true);
-      try {
-        let finalUrl = '';
-        if (source.provider === 'anroll' && slug) {
-          const { AnrollAPI } = await import('@/lib/anroll');
-          const epId = await AnrollAPI.getEpisodeId(slug, currentEp);
-          if (epId) {
-            finalUrl = (await AnrollAPI.getPlayerIframe(epId)) || '';
-          }
-        } else if (source.provider === 'consumet') {
-          const res = await fetch(`/api/consumet?id=${anime?.id}&ep=${currentEp}`);
-          if (res.ok) {
-            const data = await res.json();
-            finalUrl = data.url;
-          }
-        }
-
-        if (finalUrl) {
-          source.url = finalUrl;
-        }
-      } catch (err) {
-        console.error('Failed to resolve async source', err);
-      } finally {
-        setIsResolvingSource(false);
-        setIframeKey((prev) => prev + 1);
-      }
-    } else {
-      setIframeKey((prev) => prev + 1);
-    }
+    setIframeKey((prev) => prev + 1);
   };
 
   // Loading State
@@ -337,33 +307,19 @@ export default function PlayerPage() {
           <div className="flex-1 min-w-0 flex flex-col gap-4">
             {/* Player Container */}
             <div className="relative z-10 w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl shadow-black/80 group">
-              {tmdbLoading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950">
-                  <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                    Buscando fontes de vídeo...
-                  </p>
-                </div>
-              ) : displaySources.length === 0 ? (
+              {displaySources.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 p-6 text-center">
                   <VideoOff className="w-8 h-8 text-slate-700 mx-auto mb-2" />
                   <p className="text-slate-400 text-xs font-bold mb-1">
-                    Nenhuma fonte de vídeo encontrada para este anime.
+                    Nenhum stream direto disponível para este episódio.
                   </p>
                   <p className="text-slate-600 text-[10px]">
-                    Use o botão de busca por Torrent ou tente outros servidores.
-                  </p>
-                </div>
-              ) : isResolvingSource ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950">
-                  <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                    Conectando ao servidor...
+                    Use o botão de busca por Torrent ou tente novamente em instantes.
                   </p>
                 </div>
               ) : !currentUrl ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 text-slate-400 text-sm">
-                  <p>Vídeo indisponível neste servidor. Por favor, selecione outro servidor ou Torrent.</p>
+                  <p>Vídeo indisponível neste momento. Por favor, tente via Torrent.</p>
                 </div>
               ) : activeSource === 'webtor' && webtorMagnet ? (
                 /* Webtor Torrent Playback */
