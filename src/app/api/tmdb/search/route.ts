@@ -8,9 +8,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query is required' }, { status: 400 });
   }
 
-  const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+  // Prioriza a chave de servidor segura TMDB_API_KEY para não vazar quotas
+  const apiKey = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY;
   if (!apiKey) {
-    // Retornamos 200 com array vazio para evitar o erro 500 vermelho feio no console do navegador
     return NextResponse.json({ results: [], error: 'TMDB_API_KEY_MISSING' });
   }
 
@@ -18,11 +18,12 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(url, {
-      next: { revalidate: 86400 } // Cache results for 24h
+      next: { revalidate: 86400 }, // Cache results for 24h
+      signal: AbortSignal.timeout(8000),
     });
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('TMDB_PROXY_ERROR:', error);
     return NextResponse.json({ error: 'Failed to fetch from TMDB' }, { status: 500 });
   }

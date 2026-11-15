@@ -1,6 +1,7 @@
 import { AniListAPI } from '@/lib/api';
 import Link from 'next/link';
 import EpisodeCard from './EpisodeCard';
+import { PlayCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface RecentSectionProps {
   page?: number;
@@ -31,7 +32,7 @@ export default async function RecentSection({ page = 1 }: RecentSectionProps) {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-circle-play text-blue-500 text-xl"></i>
+            <PlayCircle className="w-5 h-5 text-blue-500" />
             <h2 className="text-xl font-bold tracking-tight text-white uppercase tracking-tighter">Últimos Lançamentos</h2>
           </div>
           <Link 
@@ -39,7 +40,7 @@ export default async function RecentSection({ page = 1 }: RecentSectionProps) {
             className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-blue-500 transition-colors flex items-center gap-2 group"
           >
             Ver Todos
-            <i className="fa-solid fa-chevron-right group-hover:translate-x-1 transition-transform"></i>
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
@@ -56,9 +57,10 @@ export default async function RecentSection({ page = 1 }: RecentSectionProps) {
               <Link 
                 href={`/?page=${current - 1}`}
                 scroll={false}
+                aria-label="Página anterior"
                 className="w-10 h-10 flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white hover:border-blue-500/50 hover:scale-110 rounded-full transition-all duration-300"
               >
-                <i className="fa-solid fa-chevron-left text-xs"></i>
+                <ChevronLeft className="w-4 h-4" />
               </Link>
             )}
 
@@ -81,9 +83,10 @@ export default async function RecentSection({ page = 1 }: RecentSectionProps) {
               <Link 
                 href={`/?page=${current + 1}`}
                 scroll={false}
+                aria-label="Próxima página"
                 className="w-10 h-10 flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white hover:border-blue-500/50 hover:scale-110 rounded-full transition-all duration-300"
               >
-                <i className="fa-solid fa-chevron-right text-xs"></i>
+                <ChevronRight className="w-4 h-4" />
               </Link>
             )}
           </div>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { Play, Plus } from "lucide-react";
 
 interface HeroProps {
   animes: any[];
@@ -69,11 +70,11 @@ export default function Hero({ animes }: HeroProps) {
               href={`/anime/${current.id}`}
               className="h-14 px-10 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest transition-all hover:bg-blue-500 hover:text-white hover:scale-105 active:scale-95 flex items-center justify-center gap-3 shadow-2xl"
             >
-              <i className="fa-solid fa-play"></i>
+              <Play className="w-4 h-4 fill-current" />
               Ver Detalhes
             </Link>
             <button className="h-14 px-8 bg-slate-900/80 backdrop-blur-xl text-white border border-white/10 rounded-2xl font-black uppercase text-xs tracking-widest transition-all hover:bg-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
-              <i className="fa-solid fa-plus"></i>
+              <Plus className="w-4 h-4" />
               Minha Lista
             </button>
           </div>

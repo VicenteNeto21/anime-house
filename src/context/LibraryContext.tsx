@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AniListAPI } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 
 interface LibraryItem {
   id: number;
@@ -12,8 +13,8 @@ interface LibraryItem {
 interface LibraryContextType {
   library: LibraryItem[];
   loading: boolean;
-  refreshLibrary: () => Promise<void>;
-  isInLibrary: (animeId: number) => LibraryItem | undefined;
+  refreshLibrary: (forceRefresh?: boolean) => Promise<void>;
+  isInLibrary: (animeId: number | string) => LibraryItem | undefined;
 }
 
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
@@ -21,9 +22,27 @@ const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [library, setLibrary] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const { data: session, status } = useSession();
+
+  const sessionToken = (session as { accessToken?: string })?.accessToken;
+
+  // Dispara sincronização quando a sessão é autenticada sem expor o token no localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (status === 'authenticated' && sessionToken) {
+      window.dispatchEvent(new Event('anilist-sync'));
+    } else if (status === 'unauthenticated') {
+      localStorage.removeItem('anilist_token');
+      localStorage.removeItem('anilist_user_id');
+      setLibrary([]);
+    }
+  }, [status, sessionToken]);
 
   const refreshLibrary = useCallback(async (forceRefresh = false) => {
-    const token = localStorage.getItem('anilist_token');
+    if (typeof window === 'undefined') return;
+
+    const token = sessionToken || localStorage.getItem('anilist_token');
     if (!token) {
       setLibrary([]);
       setLoading(false);
@@ -34,7 +53,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     try {
       // 1. Verificar se já temos o ID do usuário em cache para evitar chamadas extras
       let userId = localStorage.getItem('anilist_user_id');
-      
+
       if (!userId) {
         const userRes = await AniListAPI.getCurrentUser(token);
         userId = userRes?.Viewer?.id?.toString() || null;
@@ -61,17 +80,17 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
           }
         }
       `;
-      
-      const data = await AniListAPI.query(gql, { userId: parseInt(userId) }, token, forceRefresh);
+
+      const data = await AniListAPI.query(gql, { userId: parseInt(userId, 10) }, token, forceRefresh);
       const allEntries: LibraryItem[] = [];
-      
+
       if (data?.MediaListCollection?.lists) {
-        data.MediaListCollection.lists.forEach((list: any) => {
-          list.entries?.forEach((entry: any) => {
+        data.MediaListCollection.lists.forEach((list: { entries?: Array<{ mediaId: number; status: string; progress: number }> }) => {
+          list.entries?.forEach((entry) => {
             allEntries.push({
               id: entry.mediaId,
               status: entry.status,
-              progress: entry.progress
+              progress: entry.progress,
             });
           });
         });
@@ -83,11 +102,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sessionToken]);
 
   useEffect(() => {
     refreshLibrary(false); // Carga inicial usa cache
-    
+
     // Debounce no sync para evitar múltiplas chamadas rápidas
     let syncTimeout: NodeJS.Timeout;
     const handleSync = () => {
@@ -102,7 +121,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   }, [refreshLibrary]);
 
   const isInLibrary = (animeId: number | string) => {
-    return library.find(item => Number(item.id) === Number(animeId));
+    return library.find((item) => Number(item.id) === Number(animeId));
   };
 
   return (
@@ -122,7 +141,5 @@ const defaultLibrary: LibraryContextType = {
 
 export function useLibrary() {
   const context = useContext(LibraryContext);
-  // Retorna defaults seguros em vez de explodir — componentes como AnimeCard
-  // podem ser renderizados antes do Provider montar durante SSR/hydration
   return context ?? defaultLibrary;
 }

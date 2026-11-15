@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 
 interface TrailerModalProps {
   trailerId: string;
@@ -18,10 +19,26 @@ export default function TrailerModal({ trailerId, isOpen, onClose, title }: Trai
     return () => setMounted(false);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title ? `Trailer oficial de ${title}` : 'Trailer oficial'}
+    >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-950/95 backdrop-blur-md animate-in fade-in duration-500" 
@@ -44,9 +61,10 @@ export default function TrailerModal({ trailerId, isOpen, onClose, title }: Trai
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:rotate-90 hover:scale-110 active:scale-95 border border-white/10 backdrop-blur-md"
+            className="w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:rotate-90 hover:scale-110 active:scale-95 border border-white/10 backdrop-blur-md cursor-pointer"
+            aria-label="Fechar trailer"
           >
-            <i className="fa-solid fa-xmark text-lg"></i>
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
 
@@ -54,9 +72,9 @@ export default function TrailerModal({ trailerId, isOpen, onClose, title }: Trai
         <iframe
           src={`https://www.youtube.com/embed/${trailerId}?autoplay=1&rel=0&modestbranding=1`}
           className="w-full h-full"
-          frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
+          title={title ? `Trailer de ${title}` : 'Trailer oficial do YouTube'}
         />
       </div>
     </div>,

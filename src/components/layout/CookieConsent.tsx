@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Cookie } from 'lucide-react';
 
 export default function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false);
@@ -28,7 +29,7 @@ export default function CookieConsent() {
       <div className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 p-6 rounded-3xl shadow-2xl shadow-black/50">
         <div className="flex items-start gap-4 mb-6">
           <div className="w-12 h-12 shrink-0 bg-blue-600/20 rounded-2xl flex items-center justify-center border border-blue-500/20">
-            <i className="fa-solid fa-cookie-bite text-blue-500 text-xl"></i>
+            <Cookie className="w-6 h-6 text-blue-500" />
           </div>
           <div>
             <h4 className="text-white font-bold text-lg mb-1">Privacidade e Cookies</h4>

@@ -5,6 +5,7 @@ import { WatchHistory, HistoryItem } from '@/lib/history';
 import { AniListAPI } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ChevronLeft, ChevronRight, RefreshCw, Play } from 'lucide-react';
 
 type ResumeSnapshot = {
   time: number;
@@ -334,14 +335,14 @@ export default function ContinueWatching() {
               className="w-10 h-10 flex items-center justify-center bg-slate-900/50 hover:bg-slate-800 border border-white/5 rounded-xl transition-all group"
               aria-label="Rolar para esquerda"
             >
-              <i className="fa-solid fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform" />
+              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
             </button>
             <button
               onClick={() => scroll('right')}
               className="w-10 h-10 flex items-center justify-center bg-slate-900/50 hover:bg-slate-800 border border-white/5 rounded-xl transition-all group"
               aria-label="Rolar para direita"
             >
-              <i className="fa-solid fa-chevron-right text-xs group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
             </button>
             {hasMore && (
               <button
@@ -395,8 +396,8 @@ export default function ContinueWatching() {
                   </h4>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1.5 min-w-0">
-                      {item.isFromAniList && <i className="fa-solid fa-sync-alt text-[8px] opacity-50 animate-pulse" />}
-                      <i className="fa-solid fa-play text-[8px]" />
+                      {item.isFromAniList && <RefreshCw className="w-2.5 h-2.5 opacity-50 animate-spin" />}
+                      <Play className="w-2.5 h-2.5 fill-current" />
                       {resumeLabel ? `Continuar EP ${item.episode} - ${resumeLabel}` : `Episodio ${item.episode}`}
                     </span>
                     {sourceName && (
@@ -409,7 +410,7 @@ export default function ContinueWatching() {
 
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
                   <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/40 scale-75 group-hover:scale-100 transition-transform">
-                    <i className="fa-solid fa-play text-white text-lg ml-1" />
+                    <Play className="w-5 h-5 text-white fill-current ml-0.5" />
                   </div>
                 </div>
               </Link>

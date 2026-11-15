@@ -2,6 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Magnet, 
+  X, 
+  Languages, 
+  Mic, 
+  Layers, 
+  Loader2, 
+  Search, 
+  Database, 
+  Subtitles, 
+  ArrowUp, 
+  ArrowDown, 
+  HardDrive, 
+  User, 
+  Calendar, 
+  Flag 
+} from 'lucide-react';
+import { sanitizeMagnetUri } from '@/lib/security/magnet';
 
 export interface TorrentResult {
   title: string;
@@ -182,10 +200,10 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
           {/* Header */}
           <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <i className="fa-solid fa-magnet text-blue-500"></i> Buscar Torrent
+              <Magnet className="w-5 h-5 text-blue-500" /> Buscar Torrent
             </h2>
-            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-              <i className="fa-solid fa-xmark text-xl"></i>
+            <button onClick={onClose} aria-label="Fechar" className="text-slate-400 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -207,34 +225,34 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                 <button
                   type="button"
                   onClick={() => setAudioType('RAW')}
-                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${
                     audioType === 'RAW' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'
                   }`}
                   title="Apenas Legendado (Inglês/Originais)"
                 >
-                  <i className="fa-solid fa-language sm:mr-1"></i>
+                  <Languages className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Leg</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAudioType('DUB')}
-                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${
                     audioType === 'DUB' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'
                   }`}
                   title="Apenas Dublados em PT-BR"
                 >
-                  <i className="fa-solid fa-microphone sm:mr-1"></i>
+                  <Mic className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Dub</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAudioType('MULTI')}
-                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1 ${
                     audioType === 'MULTI' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'
                   }`}
                   title="Dual-Audio ou Multi-Audio"
                 >
-                  <i className="fa-solid fa-layer-group sm:mr-1"></i>
+                  <Layers className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Multi</span>
                 </button>
               </div>
@@ -242,9 +260,9 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
               <button 
                 type="submit" 
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 flex-shrink-0"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 flex-shrink-0 flex items-center justify-center gap-2"
               >
-                {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <><span className="hidden sm:inline">Buscar</span><i className="fa-solid fa-search sm:hidden"></i></>}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><span className="hidden sm:inline">Buscar</span><Search className="w-4 h-4 sm:hidden" /></>}
               </button>
             </form>
           </div>
@@ -278,7 +296,7 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                   className="px-3 py-1.5 bg-slate-800 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/50 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
                   title={animeTitles.romaji}
                 >
-                  <i className="fa-solid fa-language text-blue-400 text-xs"></i> Romaji
+                  <Languages className="w-3 h-3 text-blue-400" /> Romaji
                 </button>
               )}
 
@@ -337,8 +355,11 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                   <div 
                     key={idx}
                     onClick={() => {
-                      onSelectMagnet(torrent.magnet);
-                      onClose();
+                      const clean = sanitizeMagnetUri(torrent.magnet);
+                      if (clean) {
+                        onSelectMagnet(clean);
+                        onClose();
+                      }
                     }}
                     className="bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 hover:border-blue-500/50 p-4 rounded-xl cursor-pointer transition-all group flex flex-col gap-3 relative overflow-hidden"
                   >
@@ -356,7 +377,7 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                           : torrent.source === 'PirateBay' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
                           : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
                         }`}>
-                          <i className="fa-solid fa-database"></i> {torrent.source}
+                          <Database className="w-2.5 h-2.5" /> {torrent.source}
                         </span>
                       )}
                     </div>
@@ -365,10 +386,10 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                     <div className="flex flex-wrap gap-2">
                       {torrent.audio && torrent.audio.length > 0 && (
                         <div className="flex items-center gap-1.5 bg-slate-900/60 px-2 py-1 rounded-md border border-white/5" title="Idiomas de Áudio">
-                          <i className="fa-solid fa-microphone text-[10px] text-slate-500 mr-1"></i>
+                          <Mic className="w-2.5 h-2.5 text-slate-500 mr-1" />
                           {torrent.audio.map(l => (
                             <span key={`audio-${l}`} title={LANG_MAP[l.toLowerCase()]?.name || l} className="flex items-center drop-shadow-md">
-                              {LANG_MAP[l.toLowerCase()]?.flag || <i className="fa-solid fa-flag text-slate-500 text-[10px]"></i>}
+                              {LANG_MAP[l.toLowerCase()]?.flag || <Flag className="w-2.5 h-2.5 text-slate-500" />}
                             </span>
                           ))}
                         </div>
@@ -376,10 +397,10 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                       
                       {torrent.subs && torrent.subs.length > 0 && (
                         <div className="flex items-center gap-1.5 bg-slate-900/60 px-2 py-1 rounded-md border border-white/5" title="Idiomas de Legenda">
-                          <i className="fa-solid fa-closed-captioning text-[10px] text-slate-500 mr-1"></i>
+                          <Subtitles className="w-2.5 h-2.5 text-slate-500 mr-1" />
                           {torrent.subs.map(l => (
                             <span key={`sub-${l}`} title={LANG_MAP[l.toLowerCase()]?.name || l} className="flex items-center drop-shadow-md">
-                              {LANG_MAP[l.toLowerCase()]?.flag || <i className="fa-solid fa-flag text-slate-500 text-[10px]"></i>}
+                              {LANG_MAP[l.toLowerCase()]?.flag || <Flag className="w-2.5 h-2.5 text-slate-500" />}
                             </span>
                           ))}
                         </div>
@@ -389,24 +410,24 @@ export default function TorrentModal({ isOpen, onClose, defaultQuery, onSelectMa
                     {/* Linha Inferior: Metadados (Peers, Data, Uploader) */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-semibold mt-1 border-t border-white/5 pt-2">
                       <span className="text-green-400 flex items-center gap-1" title="Seeders (Uploaders)">
-                        <i className="fa-solid fa-arrow-up"></i> {torrent.seeders}
+                        <ArrowUp className="w-3 h-3" /> {torrent.seeders}
                       </span>
                       <span className="text-red-400 flex items-center gap-1" title="Leechers (Downloaders)">
-                        <i className="fa-solid fa-arrow-down"></i> {torrent.leechers}
+                        <ArrowDown className="w-3 h-3" /> {torrent.leechers}
                       </span>
                       <span className="text-slate-400 flex items-center gap-1">
-                        <i className="fa-solid fa-hard-drive"></i> {torrent.size}
+                        <HardDrive className="w-3 h-3" /> {torrent.size}
                       </span>
                       
                       {torrent.uploader && (
                         <span className="text-slate-400 flex items-center gap-1 ml-auto">
-                          <i className="fa-solid fa-user text-slate-500"></i> {torrent.uploader}
+                          <User className="w-3 h-3 text-slate-500" /> {torrent.uploader}
                         </span>
                       )}
                       
                       {torrent.date && (
                         <span className="text-slate-500 flex items-center gap-1">
-                          <i className="fa-solid fa-calendar text-slate-600"></i> 
+                          <Calendar className="w-3 h-3 text-slate-600" /> 
                           {new Date(torrent.date).toLocaleDateString('pt-BR')}
                         </span>
                       )}

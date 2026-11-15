@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth', 'pino'],
+  output: 'standalone',
+  serverExternalPackages: ['pino'],
   typescript: {
     ignoreBuildErrors: true, // TypeScript warnings não bloqueiam deploy
   },
@@ -78,18 +79,22 @@ const nextConfig: NextConfig = {
     ],
   },
   compress: true, // gzip/brotli nos assets
-  async headers() {
+  async redirects() {
     return [
       {
-        // Assets estáticos do Next.js — cache agressivo (1 ano)
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        source: '/privacy',
+        destination: '/privacidade',
+        permanent: true,
       },
+      {
+        source: '/terms',
+        destination: '/termos',
+        permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
       {
         source: '/(.*)',
         headers: [
@@ -112,6 +117,18 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://*.google.com https://*.googlesyndication.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://graphql.anilist.co https://kitsu.io https://api.themoviedb.org https://*.google.com; frame-src 'self' https://*.youtube.com https://autoembed.to https://multiembed.mov https://superflixapi.pro https://1298009.xyz https://embed.warezcdn.net https://vidsrc.to https://*.webtor.io; object-src 'none'; base-uri 'self';",
           },
         ],
       },

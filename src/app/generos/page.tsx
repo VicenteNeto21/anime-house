@@ -1,25 +1,47 @@
 import { AniListAPI } from '@/lib/api';
 import Link from 'next/link';
 import Image from 'next/image';
+import { 
+  Flame, 
+  Compass, 
+  Smile, 
+  Theater, 
+  Sparkles, 
+  Ghost, 
+  Wand2, 
+  Bot, 
+  Music, 
+  Search, 
+  Brain, 
+  Heart, 
+  Rocket, 
+  Coffee, 
+  Trophy, 
+  Zap, 
+  Skull, 
+  Tag, 
+  Tags,
+  type LucideIcon 
+} from 'lucide-react';
 
-const genreIcons: Record<string, string> = {
-  'Action': 'fa-fire-flame-curved',
-  'Adventure': 'fa-compass',
-  'Comedy': 'fa-face-laugh-squint',
-  'Drama': 'fa-masks-theater',
-  'Fantasy': 'fa-wand-magic-sparkles',
-  'Horror': 'fa-ghost',
-  'Mahou Shoujo': 'fa-wand-sparkles',
-  'Mecha': 'fa-robot',
-  'Music': 'fa-music',
-  'Mystery': 'fa-magnifying-glass',
-  'Psychological': 'fa-brain',
-  'Romance': 'fa-heart',
-  'Sci-Fi': 'fa-shuttle-space',
-  'Slice of Life': 'fa-mug-hot',
-  'Sports': 'fa-volleyball',
-  'Supernatural': 'fa-bolt',
-  'Thriller': 'fa-skull'
+const genreIcons: Record<string, LucideIcon> = {
+  'Action': Flame,
+  'Adventure': Compass,
+  'Comedy': Smile,
+  'Drama': Theater,
+  'Fantasy': Sparkles,
+  'Horror': Ghost,
+  'Mahou Shoujo': Wand2,
+  'Mecha': Bot,
+  'Music': Music,
+  'Mystery': Search,
+  'Psychological': Brain,
+  'Romance': Heart,
+  'Sci-Fi': Rocket,
+  'Slice of Life': Coffee,
+  'Sports': Trophy,
+  'Supernatural': Zap,
+  'Thriller': Skull
 };
 
 const gradients = [
@@ -59,7 +81,7 @@ export default async function GenresPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
         <div className="flex items-center gap-6">
           <div className="w-16 h-16 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-center text-blue-500">
-            <i className="fa-solid fa-tags text-2xl"></i>
+            <Tags className="w-7 h-7" />
           </div>
           <div>
             <h1 className="text-4xl font-black tracking-tighter uppercase text-white">Gêneros</h1>
@@ -72,7 +94,7 @@ export default async function GenresPage() {
         {stats.map((item, index) => {
           const genre = item.genre;
           const translation = genreMaps[genre] || genre;
-          const icon = genreIcons[genre] || 'fa-tag';
+          const IconComponent = genreIcons[genre] || Tag;
           const gradient = gradients[index % gradients.length];
 
           return (
@@ -99,7 +121,7 @@ export default async function GenresPage() {
               
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-12 h-12 mb-3 flex items-center justify-center rounded-2xl bg-white/5 group-hover:bg-white/10 transition-colors duration-500">
-                  <i className={`fa-solid ${icon} text-2xl text-white/40 group-hover:text-white transition-all duration-500 group-hover:scale-110`} />
+                  <IconComponent className="w-6 h-6 text-white/40 group-hover:text-white transition-all duration-500 group-hover:scale-110" />
                 </div>
                 
                 <span className="text-[13px] font-black tracking-widest uppercase text-white/80 group-hover:text-white transition-colors">

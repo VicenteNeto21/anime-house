@@ -9,6 +9,32 @@ function formatBytes(bytes: number, decimals = 1) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
+interface NekoItem {
+  title?: string;
+  magnet?: string;
+  filesize?: number | string;
+  seeders?: string | number;
+  leechers?: string | number;
+  uploaded_at?: string;
+  uploader?: { display_name?: string };
+  audio_lang?: string;
+  fsub_lang?: string;
+  sub_lang?: string;
+}
+
+interface TorrentResult {
+  title: string;
+  magnet: string;
+  size: string;
+  seeders: number;
+  leechers: number;
+  source: string;
+  date?: string;
+  uploader?: string;
+  audio?: string[];
+  subs?: string[];
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q');
@@ -17,13 +43,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Parâmetro de busca "q" é obrigatório.' }, { status: 400 });
   }
 
+  const token = process.env.NEKOBT_TOKEN;
+  if (!token) {
+    return NextResponse.json({ results: [], error: 'NEKOBT_TOKEN não configurado no servidor' }, { status: 200 });
+  }
+
   try {
     const url = `https://nekobt.to/api/v1/torrents/search?query=${encodeURIComponent(q)}`;
     
     const response = await fetch(url, {
       headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c3IiOiIxMjc4NDAzMjI3MjY3MCIsInZlciI6MSwidHlwIjoxLCJpYXQiOjE3ODU3MjQ4MzUsImV4cCI6MTgxNzI2MDgzNX0.bLg7I7r-GEiHo9It8bwypGS9v8VFStfLaCNS_8Pn6S4'
-      }
+        'Authorization': `Bearer ${token}`
+      },
+      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 3600 }
     });
 
     if (!response.ok) {
@@ -31,30 +64,31 @@ export async function GET(request: Request) {
     }
 
     const json = await response.json();
-    const results: any[] = [];
+    const results: TorrentResult[] = [];
 
-    if (json.data && Array.isArray(json.data.results)) {
-      json.data.results.forEach((item: any) => {
+    if (json?.data && Array.isArray(json.data.results)) {
+      json.data.results.forEach((item: NekoItem) => {
         if (item.title && item.magnet) {
           results.push({
             title: item.title,
             magnet: item.magnet,
             size: formatBytes(Number(item.filesize) || 0),
-            seeders: parseInt(item.seeders || '0', 10),
-            leechers: parseInt(item.leechers || '0', 10),
+            seeders: parseInt(String(item.seeders || '0'), 10),
+            leechers: parseInt(String(item.leechers || '0'), 10),
             source: 'NekoBT',
             date: item.uploaded_at ? new Date(item.uploaded_at).toISOString() : undefined,
             uploader: item.uploader?.display_name || undefined,
             audio: item.audio_lang ? item.audio_lang.split(',').filter(Boolean) : undefined,
-            subs: (item.fsub_lang || item.sub_lang) ? (item.fsub_lang || item.sub_lang).split(',').filter(Boolean) : undefined
+            subs: (item.fsub_lang || item.sub_lang) ? (item.fsub_lang || item.sub_lang)!.split(',').filter(Boolean) : undefined
           });
         }
       });
     }
 
     return NextResponse.json({ results });
-  } catch (error: any) {
-    console.error('Erro na API do NekoBT:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro na consulta ao NekoBT';
+    console.error('Erro na API do NekoBT:', message);
+    return NextResponse.json({ error: 'Erro ao consultar provedor de torrent' }, { status: 500 });
   }
 }

@@ -6,6 +6,38 @@ import { AniListAPI } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
+import { 
+  User, 
+  UserX, 
+  Heart, 
+  Flame, 
+  Sparkles, 
+  Compass, 
+  Theater, 
+  Brain, 
+  Smile, 
+  Star, 
+  Zap, 
+  Crown, 
+  Play, 
+  RotateCw, 
+  Clock, 
+  CheckCheck, 
+  Pause, 
+  Trash2, 
+  Power, 
+  Trophy, 
+  Lock, 
+  Dna, 
+  Tv, 
+  Film, 
+  Plus, 
+  Minus, 
+  Ghost, 
+  ChevronLeft, 
+  ChevronRight, 
+  type LucideIcon 
+} from 'lucide-react';
 
 const GENRE_MAP: { [key: string]: { label: string, color: string } } = {
   'Action': { label: 'Ação', color: 'bg-rose-500' },
@@ -40,8 +72,12 @@ export default function ProfilePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  const getSessionToken = () => {
+    return (session as { accessToken?: string })?.accessToken || (typeof window !== 'undefined' ? localStorage.getItem('anilist_token') : null);
+  };
+
   const fetchProfileData = async () => {
-    const token = localStorage.getItem('anilist_token');
+    const token = getSessionToken();
     
     // Se não houver token do AniList E não houver sessão do Google ativa (e não estiver carregando)
     if (!token && status === 'unauthenticated') {
@@ -156,7 +192,7 @@ export default function ProfilePage() {
   }, [activeTab]);
 
   const handleUpdateProgress = async (mediaId: number, currentProgress: number, delta: number, entryId?: number) => {
-    const token = localStorage.getItem('anilist_token');
+    const token = getSessionToken();
     const newProgress = currentProgress + delta;
     if (!token || updatingId || newProgress < 0) return;
 
@@ -175,7 +211,7 @@ export default function ProfilePage() {
   const handleRemoveEntry = async (entryId: number) => {
     if (!confirm('Tem certeza que deseja remover este anime da sua lista?')) return;
     
-    const token = localStorage.getItem('anilist_token');
+    const token = getSessionToken();
     if (!token) return;
 
     try {
@@ -198,7 +234,7 @@ export default function ProfilePage() {
         <div className="relative">
           <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <i className="fa-solid fa-user text-blue-500 animate-pulse text-xs"></i>
+            <User className="w-4 h-4 text-blue-500 animate-pulse" />
           </div>
         </div>
       </div>
@@ -209,7 +245,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-4">
         <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-6 border border-white/5">
-          <i className="fa-solid fa-user-slash text-3xl text-slate-700"></i>
+          <UserX className="w-8 h-8 text-slate-700" />
         </div>
         <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Sessão Expirada</h2>
         <p className="text-slate-500 text-sm mb-8 text-center max-w-xs">Não conseguimos recuperar suas informações. Por favor, faça login novamente.</p>
@@ -226,29 +262,29 @@ export default function ProfilePage() {
 
   const topGenres = user.statistics?.anime?.genres?.slice(0, 3)?.map((g: any) => g.genre) || [];
   
-  const allPossibleAchievements = [
-    { id: 'romance', label: 'Eterno Romântico', hint: 'Tenha Romance no seu Top 3', icon: 'fa-heart', color: 'from-rose-400 to-pink-500', unlocked: topGenres.includes('Romance') },
-    { id: 'action', label: 'Guerreiro Shounen', hint: 'Tenha Ação no seu Top 3', icon: 'fa-fire', color: 'from-orange-500 to-red-600', unlocked: topGenres.includes('Action') },
-    { id: 'fantasy', label: 'Mestre da Magia', hint: 'Tenha Fantasia no seu Top 3', icon: 'fa-wand-magic-sparkles', color: 'from-indigo-500 to-purple-600', unlocked: topGenres.includes('Fantasy') },
-    { id: 'adventure', label: 'Explorador', hint: 'Tenha Aventura no seu Top 3', icon: 'fa-map-location-dot', color: 'from-amber-500 to-orange-600', unlocked: topGenres.includes('Adventure') },
-    { id: 'drama', label: 'Colecionador de Emoções', hint: 'Tenha Drama no seu Top 3', icon: 'fa-masks-theater', color: 'from-purple-500 to-indigo-700', unlocked: topGenres.includes('Drama') },
-    { id: 'brain', label: 'Cérebro de Platina', hint: 'Tenha Mistério no seu Top 3', icon: 'fa-brain', color: 'from-zinc-500 to-slate-700', unlocked: topGenres.includes('Mystery') || topGenres.includes('Psychological') },
-    { id: 'comedy', label: 'Rei da Comédia', hint: 'Tenha Comédia no seu Top 3', icon: 'fa-face-laugh-squint', color: 'from-yellow-400 to-orange-500', unlocked: topGenres.includes('Comedy') },
-    { id: 'critic', label: 'Crítico de Elite', hint: 'Nota Média acima de 85%', icon: 'fa-star-half-stroke', color: 'from-amber-400 to-yellow-600', unlocked: (user.statistics?.anime?.meanScore || 0) >= 85 },
-    { id: 'marathon', label: 'Maratonista Real', hint: 'Assista +1000 episódios', icon: 'fa-bolt', color: 'from-yellow-400 to-amber-600', unlocked: (user.statistics?.anime?.episodesWatched || 0) > 1000 },
-    { id: 'legend', label: 'Lenda das Temporadas', hint: 'Tenha +200 animes na lista', icon: 'fa-crown', color: 'from-blue-500 to-indigo-700', unlocked: (user.statistics?.anime?.count || 0) > 200 },
+  const allPossibleAchievements: { id: string; label: string; hint: string; icon: LucideIcon; color: string; unlocked: boolean }[] = [
+    { id: 'romance', label: 'Eterno Romântico', hint: 'Tenha Romance no seu Top 3', icon: Heart, color: 'from-rose-400 to-pink-500', unlocked: topGenres.includes('Romance') },
+    { id: 'action', label: 'Guerreiro Shounen', hint: 'Tenha Ação no seu Top 3', icon: Flame, color: 'from-orange-500 to-red-600', unlocked: topGenres.includes('Action') },
+    { id: 'fantasy', label: 'Mestre da Magia', hint: 'Tenha Fantasia no seu Top 3', icon: Sparkles, color: 'from-indigo-500 to-purple-600', unlocked: topGenres.includes('Fantasy') },
+    { id: 'adventure', label: 'Explorador', hint: 'Tenha Aventura no seu Top 3', icon: Compass, color: 'from-amber-500 to-orange-600', unlocked: topGenres.includes('Adventure') },
+    { id: 'drama', label: 'Colecionador de Emoções', hint: 'Tenha Drama no seu Top 3', icon: Theater, color: 'from-purple-500 to-indigo-700', unlocked: topGenres.includes('Drama') },
+    { id: 'brain', label: 'Cérebro de Platina', hint: 'Tenha Mistério no seu Top 3', icon: Brain, color: 'from-zinc-500 to-slate-700', unlocked: topGenres.includes('Mystery') || topGenres.includes('Psychological') },
+    { id: 'comedy', label: 'Rei da Comédia', hint: 'Tenha Comédia no seu Top 3', icon: Smile, color: 'from-yellow-400 to-orange-500', unlocked: topGenres.includes('Comedy') },
+    { id: 'critic', label: 'Crítico de Elite', hint: 'Nota Média acima de 85%', icon: Star, color: 'from-amber-400 to-yellow-600', unlocked: (user.statistics?.anime?.meanScore || 0) >= 85 },
+    { id: 'marathon', label: 'Maratonista Real', hint: 'Assista +1000 episódios', icon: Zap, color: 'from-yellow-400 to-amber-600', unlocked: (user.statistics?.anime?.episodesWatched || 0) > 1000 },
+    { id: 'legend', label: 'Lenda das Temporadas', hint: 'Tenha +200 animes na lista', icon: Crown, color: 'from-blue-500 to-indigo-700', unlocked: (user.statistics?.anime?.count || 0) > 200 },
   ];
 
   const unlockedAchievements = allPossibleAchievements.filter(a => a.unlocked);
   const lockedAchievements = allPossibleAchievements.filter(a => !a.unlocked);
 
-  const tabs = [
-    { id: 'CURRENT', label: 'Assistindo', icon: 'fa-play' },
-    { id: 'REPEATING', label: 'Reassistindo', icon: 'fa-rotate-right' },
-    { id: 'PLANNING', label: 'Planejando', icon: 'fa-clock' },
-    { id: 'COMPLETED', label: 'Completos', icon: 'fa-check-double' },
-    { id: 'PAUSED', label: 'Pausados', icon: 'fa-pause' },
-    { id: 'DROPPED', label: 'Desistidos', icon: 'fa-trash' },
+  const tabs: { id: string; label: string; icon: LucideIcon }[] = [
+    { id: 'CURRENT', label: 'Assistindo', icon: Play },
+    { id: 'REPEATING', label: 'Reassistindo', icon: RotateCw },
+    { id: 'PLANNING', label: 'Planejando', icon: Clock },
+    { id: 'COMPLETED', label: 'Completos', icon: CheckCheck },
+    { id: 'PAUSED', label: 'Pausados', icon: Pause },
+    { id: 'DROPPED', label: 'Desistidos', icon: Trash2 },
   ];
 
   return (
@@ -285,9 +321,9 @@ export default function ProfilePage() {
               
               <button 
                 onClick={handleLogout}
-                className="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-[10px] font-black text-rose-500 uppercase tracking-widest transition-all group"
+                className="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-[10px] font-black text-rose-500 uppercase tracking-widest transition-all group flex items-center justify-center"
               >
-                <i className="fa-solid fa-power-off mr-2 opacity-70 group-hover:opacity-100"></i> 
+                <Power className="w-3.5 h-3.5 mr-2 opacity-70 group-hover:opacity-100" /> 
                 Sair da Conta
               </button>
             </div>
@@ -296,7 +332,7 @@ export default function ProfilePage() {
             <div className="bg-slate-900/20 border border-white/5 rounded-[20px] md:rounded-[24px] p-4 md:p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4 md:mb-6">
                 <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
-                  <i className="fa-solid fa-trophy text-amber-500"></i>
+                  <Trophy className="w-3.5 h-3.5 text-amber-500" />
                   Conquistas
                 </h3>
                 <span className="text-[8px] font-black text-slate-500 bg-white/5 px-2 py-1 rounded-lg">
@@ -308,18 +344,21 @@ export default function ProfilePage() {
                 {/* Desbloqueadas */}
                 {unlockedAchievements.length > 0 && (
                   <div className="grid grid-cols-5 sm:grid-cols-5 gap-2 md:gap-3">
-                    {unlockedAchievements.map((ach) => (
-                      <div 
-                        key={ach.id} 
-                        title={ach.label}
-                        className={`aspect-square rounded-2xl bg-gradient-to-br ${ach.color} flex items-center justify-center hover:scale-110 transition-transform cursor-help`}
-                      >
-                        <i className={`fa-solid ${ach.icon} text-white text-sm`}></i>
-                      </div>
-                    ))}
+                    {unlockedAchievements.map((ach) => {
+                      const AchIcon = ach.icon;
+                      return (
+                        <div 
+                          key={ach.id} 
+                          title={ach.label}
+                          className={`aspect-square rounded-2xl bg-gradient-to-br ${ach.color} flex items-center justify-center hover:scale-110 transition-transform cursor-help`}
+                        >
+                          <AchIcon className="w-4 h-4 text-white" />
+                        </div>
+                      );
+                    })}
                     {Array.from({ length: Math.max(0, 5 - unlockedAchievements.length) }).map((_, i) => (
                       <div key={i} className="aspect-square rounded-xl md:rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center opacity-30">
-                        <i className="fa-solid fa-lock text-[10px] text-slate-600"></i>
+                        <Lock className="w-3 h-3 text-slate-600" />
                       </div>
                     ))}
                   </div>
@@ -331,7 +370,10 @@ export default function ProfilePage() {
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-3">Próximo Objetivo</p>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
-                        <i className={`fa-solid ${lockedAchievements[0].icon} text-slate-600`}></i>
+                        {(() => {
+                          const LockedIcon = lockedAchievements[0].icon;
+                          return <LockedIcon className="w-4 h-4 text-slate-600" />;
+                        })()}
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-tight">{lockedAchievements[0].label}</h4>
@@ -346,7 +388,7 @@ export default function ProfilePage() {
             {/* DNA de Anime */}
             <div className="bg-slate-900/20 border border-white/5 rounded-[20px] md:rounded-[24px] p-4 md:p-6 backdrop-blur-sm">
               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-4 md:mb-6 flex items-center gap-3">
-                <i className="fa-solid fa-dna text-blue-500"></i>
+                <Dna className="w-3.5 h-3.5 text-blue-500" />
                 DNA de Anime
               </h3>
               <div className="space-y-5">
@@ -376,21 +418,24 @@ export default function ProfilePage() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
               {[
-                { label: 'Animes Assistidos', value: user.statistics?.anime?.count || 0, icon: 'fa-tv', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-                { label: 'Total de Episódios', value: user.statistics?.anime?.episodesWatched || 0, icon: 'fa-film', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                { label: 'Nota Média', value: `${user.statistics?.anime?.meanScore || 0}%`, icon: 'fa-star', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                { label: 'Tempo Assistido', value: `${Math.floor((user.statistics?.anime?.minutesWatched || 0) / 1440)}d`, icon: 'fa-clock', color: 'text-rose-500', bg: 'bg-rose-500/10' },
-              ].map((stat, i) => (
-                <div key={i} className="p-4 md:p-6 bg-slate-900/30 border border-white/5 rounded-[20px] md:rounded-[24px] backdrop-blur-md hover:bg-slate-900/50 transition-all border-b-2 hover:border-b-blue-500/30">
-                  <div className="flex flex-col items-center text-center">
-                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl ${stat.bg} flex items-center justify-center mb-2 md:mb-3 border border-white/5`}>
-                      <i className={`fa-solid ${stat.icon} ${stat.color} text-sm`}></i>
+                { label: 'Animes Assistidos', value: user.statistics?.anime?.count || 0, icon: Tv, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                { label: 'Total de Episódios', value: user.statistics?.anime?.episodesWatched || 0, icon: Film, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                { label: 'Nota Média', value: `${user.statistics?.anime?.meanScore || 0}%`, icon: Star, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { label: 'Tempo Assistido', value: `${Math.floor((user.statistics?.anime?.minutesWatched || 0) / 1440)}d`, icon: Clock, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+              ].map((stat, i) => {
+                const StatIcon = stat.icon;
+                return (
+                  <div key={i} className="p-4 md:p-6 bg-slate-900/30 border border-white/5 rounded-[20px] md:rounded-[24px] backdrop-blur-md hover:bg-slate-900/50 transition-all border-b-2 hover:border-b-blue-500/30">
+                    <div className="flex flex-col items-center text-center">
+                      <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl ${stat.bg} flex items-center justify-center mb-2 md:mb-3 border border-white/5`}>
+                        <StatIcon className={`w-4 h-4 ${stat.color}`} />
+                      </div>
+                      <h3 className="text-xl font-black text-white leading-none tracking-tighter mb-1">{stat.value}</h3>
+                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
                     </div>
-                    <h3 className="text-xl font-black text-white leading-none tracking-tighter mb-1">{stat.value}</h3>
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Favorite Characters */}
@@ -417,19 +462,22 @@ export default function ProfilePage() {
             {/* Tabs & List */}
             <div className="space-y-8">
               <div className="flex items-center gap-2 p-1.5 bg-slate-900/40 border border-white/5 rounded-[24px] backdrop-blur-md overflow-x-auto hide-scrollbar">
-                {tabs.map((tab) => (
-                  <button 
-                    key={tab.id} 
-                    onClick={() => setActiveTab(tab.id)} 
-                    className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-[18px] text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-                  >
-                    <i className={`fa-solid ${tab.icon} text-[10px]`}></i>
-                    <span className="hidden sm:inline">{tab.label}</span>
-                    <span className={`text-[8px] ${activeTab === tab.id ? 'text-blue-200' : 'text-slate-600'}`}>
-                      ({animeList.find(l => l.status === tab.id)?.entries?.length || 0})
-                    </span>
-                  </button>
-                ))}
+                {tabs.map((tab) => {
+                  const TabIcon = tab.icon;
+                  return (
+                    <button 
+                      key={tab.id} 
+                      onClick={() => setActiveTab(tab.id)} 
+                      className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-[18px] text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                    >
+                      <TabIcon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className={`text-[8px] ${activeTab === tab.id ? 'text-blue-200' : 'text-slate-600'}`}>
+                        ({animeList.find(l => l.status === tab.id)?.entries?.length || 0})
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Anime List */}
@@ -478,22 +526,25 @@ export default function ProfilePage() {
                         <button 
                           onClick={() => handleUpdateProgress(entry.media.id, entry.progress, 1, entry.id)}
                           disabled={updatingId === entry.media.id}
+                          aria-label="Aumentar progresso"
                           className="w-full sm:w-8 h-7 sm:h-8 flex-1 sm:flex-none flex items-center justify-center bg-blue-600/20 sm:bg-slate-950 hover:bg-blue-600 border border-blue-500/20 sm:border-white/5 text-blue-400 sm:text-slate-400 hover:text-white rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
                         >
-                          <i className="fa-solid fa-plus"></i>
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => handleUpdateProgress(entry.media.id, entry.progress, -1, entry.id)}
                           disabled={updatingId === entry.media.id}
+                          aria-label="Diminuir progresso"
                           className="w-full sm:w-8 h-7 sm:h-8 flex-1 sm:flex-none flex items-center justify-center bg-slate-800 sm:bg-slate-950 hover:bg-slate-700 border border-white/5 text-slate-300 sm:text-slate-600 hover:text-white rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
                         >
-                          <i className="fa-solid fa-minus"></i>
+                          <Minus className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => handleRemoveEntry(entry.id)}
+                          aria-label="Remover da lista"
                           className="w-full sm:w-8 h-7 sm:h-8 flex-1 sm:flex-none flex items-center justify-center bg-rose-500/10 sm:bg-slate-950 hover:bg-rose-600/20 border border-rose-500/20 sm:border-white/5 text-rose-500 sm:text-slate-700 hover:text-rose-400 rounded-lg text-[10px] transition-all cursor-pointer active:scale-90"
                         >
-                          <i className="fa-solid fa-trash-can"></i>
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -501,7 +552,7 @@ export default function ProfilePage() {
                 ) : (
                   <div className="py-16 flex flex-col items-center justify-center text-center">
                     <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-white/5 opacity-50">
-                      <i className="fa-solid fa-ghost text-2xl text-slate-700"></i>
+                      <Ghost className="w-8 h-8 text-slate-700" />
                     </div>
                     <h3 className="text-lg font-black text-slate-600 uppercase tracking-tighter mb-1">Lista Vazia</h3>
                     <p className="text-slate-700 text-[10px] uppercase tracking-widest">Nenhum anime encontrado nesta categoria.</p>
@@ -516,9 +567,10 @@ export default function ProfilePage() {
                     {currentPage > 1 && (
                       <button 
                         onClick={() => setCurrentPage(prev => prev - 1)}
+                        aria-label="Página anterior"
                         className="w-10 h-10 flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white hover:border-blue-500/50 hover:scale-110 rounded-full transition-all duration-300 cursor-pointer"
                       >
-                        <i className="fa-solid fa-chevron-left text-xs"></i>
+                        <ChevronLeft className="w-4 h-4" />
                       </button>
                     )}
 
@@ -545,9 +597,10 @@ export default function ProfilePage() {
                     {currentPage < totalPages && (
                       <button 
                         onClick={() => setCurrentPage(prev => prev + 1)}
+                        aria-label="Próxima página"
                         className="w-10 h-10 flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white hover:border-blue-500/50 hover:scale-110 rounded-full transition-all duration-300 cursor-pointer"
                       >
-                        <i className="fa-solid fa-chevron-right text-xs"></i>
+                        <ChevronRight className="w-4 h-4" />
                       </button>
                     )}
                   </div>

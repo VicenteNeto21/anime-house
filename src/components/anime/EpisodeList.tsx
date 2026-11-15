@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { WatchHistory } from '@/lib/history';
 import { useState, useEffect } from 'react';
 import { formatEpisodeLabel, translateEpisodeTitle } from '@/lib/episodeTitles';
+import { Play, Check } from 'lucide-react';
 
 interface EpisodeListProps {
   animeId: number;
@@ -87,7 +88,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, animeP
                   </div>
                 )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <i className="fa-solid fa-play text-white text-xs"></i>
+                  <Play className="w-4 h-4 text-white fill-current" />
                 </div>
                 {isWatched && (
                   <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none" />
@@ -115,7 +116,7 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, animeP
               {/* Watched check */}
               {isWatched && (
                 <div className="flex-shrink-0 pr-1">
-                  <i className="fa-solid fa-check text-[10px] text-emerald-500/60"></i>
+                  <Check className="w-3.5 h-3.5 text-emerald-500/60" />
                 </div>
               )}
             </Link>
@@ -144,12 +145,12 @@ export default function EpisodeList({ animeId, animeTitle, totalEpisodes, animeP
           >
             {isWatched && (
               <div className="absolute top-1.5 right-1.5">
-                <i className="fa-solid fa-check text-[8px]"></i>
+                <Check className="w-2.5 h-2.5" />
               </div>
             )}
             <span>{epNum.toString().padStart(2, '0')}</span>
             <div className={`absolute inset-0 bg-blue-600 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity`}>
-              <i className="fa-solid fa-play text-white text-[10px]"></i>
+              <Play className="w-3 h-3 text-white fill-current" />
             </div>
           </Link>
         );

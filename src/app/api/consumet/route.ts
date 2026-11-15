@@ -1,38 +1,75 @@
 import { NextResponse } from 'next/server';
 
+interface ConsumetEpisode {
+  id: string;
+  number: number;
+}
+
+interface ConsumetSource {
+  url?: string;
+  quality?: string;
+}
+
+interface ConsumetWatchData {
+  sources?: ConsumetSource[];
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id'); // anilist id
-  const ep = searchParams.get('ep'); // episode number
+  const id = searchParams.get('id');
+  const ep = searchParams.get('ep');
 
   if (!id || !ep) {
-    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+    return NextResponse.json({ error: 'Parâmetros "id" e "ep" são obrigatórios' }, { status: 400 });
+  }
+
+  // Validação estrita: apenas dígitos numéricos
+  if (!/^\d+$/.test(id) || !/^\d+$/.test(ep)) {
+    return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 });
   }
 
   try {
-    // 1. Fetch anime info to get the episode ID
-    const infoRes = await fetch(`https://api.consumet.org/meta/anilist/info/${id}?provider=gogoanime`);
-    if (!infoRes.ok) throw new Error('Failed to fetch info');
+    const infoRes = await fetch(
+      `https://api.consumet.org/meta/anilist/info/${encodeURIComponent(id)}?provider=gogoanime`,
+      {
+        signal: AbortSignal.timeout(8000),
+        next: { revalidate: 3600 },
+      }
+    );
+
+    if (!infoRes.ok) {
+      return NextResponse.json({ error: 'Episódio não localizado no provedor' }, { status: 404 });
+    }
+
     const info = await infoRes.json();
-    
-    // Find the episode
-    const episode = info.episodes?.find((e: any) => e.number === Number(ep));
-    if (!episode) throw new Error('Episode not found');
+    const episode = info?.episodes?.find((e: ConsumetEpisode) => e.number === Number(ep));
+    if (!episode?.id) {
+      return NextResponse.json({ error: 'Episódio não encontrado' }, { status: 404 });
+    }
 
-    // 2. Fetch the streaming links
-    const watchRes = await fetch(`https://api.consumet.org/meta/anilist/watch/${episode.id}?provider=gogoanime`);
-    if (!watchRes.ok) throw new Error('Failed to fetch stream');
-    const watchData = await watchRes.json();
+    const watchRes = await fetch(
+      `https://api.consumet.org/meta/anilist/watch/${encodeURIComponent(episode.id)}?provider=gogoanime`,
+      {
+        signal: AbortSignal.timeout(8000),
+      }
+    );
 
-    // Find the best quality or auto (default to highest or auto m3u8)
-    const source = watchData.sources?.find((s: any) => s.quality === 'auto' || s.quality === '1080p') || watchData.sources?.[0];
-    
-    if (source && source.url) {
+    if (!watchRes.ok) {
+      return NextResponse.json({ error: 'Falha ao obter streaming' }, { status: 502 });
+    }
+
+    const watchData = (await watchRes.json()) as ConsumetWatchData;
+    const source =
+      watchData.sources?.find((s) => s.quality === 'auto' || s.quality === '1080p') ||
+      watchData.sources?.[0];
+
+    if (source?.url) {
       return NextResponse.json({ url: source.url });
     }
-    
-    return NextResponse.json({ error: 'No stream found' }, { status: 404 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ error: 'Nenhuma fonte de vídeo encontrada' }, { status: 404 });
+  } catch (error: unknown) {
+    console.error('Consumet route error:', error);
+    return NextResponse.json({ error: 'Erro interno ao consultar stream' }, { status: 500 });
   }
 }

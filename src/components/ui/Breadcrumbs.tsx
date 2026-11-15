@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { Home } from 'lucide-react';
 
 interface BreadcrumbItem {
   label: string;
@@ -16,7 +17,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       <ol className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest">
         <li>
           <Link href="/" className="text-slate-500 hover:text-white transition-colors flex items-center">
-            <i className="fa-solid fa-house mr-2 text-[8px]"></i>
+            <Home className="w-3 h-3 mr-1.5" />
             Início
           </Link>
         </li>

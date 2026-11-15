@@ -2,16 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { User, Play, AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { status } = useSession();
   const [autoPlay, setAutoPlay] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [quality, setQuality] = useState('Full HD (1080p)');
 
   useEffect(() => {
-    const token = localStorage.getItem('anilist_token');
-    if (!token) {
-      window.location.href = '/login';
+    if (status === 'unauthenticated') {
+      router.push('/login');
       return;
     }
 
@@ -57,7 +61,7 @@ export default function SettingsPage() {
           <section className="bg-slate-900/40 border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 bg-white/5">
               <h2 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-3">
-                <i className="fa-solid fa-user text-blue-500"></i>
+                <User className="w-4 h-4 text-blue-500" />
                 Minha Conta
               </h2>
             </div>
@@ -91,7 +95,7 @@ export default function SettingsPage() {
           <section className="bg-slate-900/40 border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 bg-white/5">
               <h2 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-3">
-                <i className="fa-solid fa-play text-blue-500"></i>
+                <Play className="w-4 h-4 text-blue-500" />
                 Preferências do Player
               </h2>
             </div>
@@ -131,7 +135,7 @@ export default function SettingsPage() {
           <section className="bg-red-500/5 border border-red-500/10 rounded-[2rem] overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-red-500/10 bg-red-500/5">
               <h2 className="text-[11px] font-black text-red-500 uppercase tracking-widest flex items-center gap-3">
-                <i className="fa-solid fa-triangle-exclamation"></i>
+                <AlertTriangle className="w-4 h-4" />
                 Zona de Perigo
               </h2>
             </div>

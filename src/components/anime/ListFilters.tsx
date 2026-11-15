@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AniListAPI } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
+import { Search, LayoutGrid, List } from 'lucide-react';
 
 interface ListFiltersProps {
   genres: string[];
@@ -64,7 +65,7 @@ export default function ListFilters({ genres }: ListFiltersProps) {
       {/* Search & View Toggle Row */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-80 group">
-          <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors"></i>
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
           <input
             type="text"
             placeholder="Pesquisar por nome..."
@@ -79,14 +80,14 @@ export default function ListFilters({ genres }: ListFiltersProps) {
             onClick={() => updateFilters('view', 'grid')}
             className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${currentView === 'grid' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-white'}`}
           >
-            <i className="fa-solid fa-grid-2"></i>
+            <LayoutGrid className="w-4 h-4" />
             Grade
           </button>
           <button
             onClick={() => updateFilters('view', 'list')}
             className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${currentView === 'list' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-white'}`}
           >
-            <i className="fa-solid fa-list"></i>
+            <List className="w-4 h-4" />
             Lista
           </button>
         </div>

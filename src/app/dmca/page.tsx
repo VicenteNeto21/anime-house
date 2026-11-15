@@ -1,4 +1,5 @@
 import React from 'react';
+import { Scale } from 'lucide-react';
 
 export const metadata = {
   title: 'Compliance & DMCA Policy | Anime House',
@@ -29,7 +30,7 @@ export default function DMCAPage() {
 
           <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <i className="fa-solid fa-scale-balanced text-red-600"></i>
+              <Scale className="w-5 h-5 text-red-600" />
               Natureza do Serviço
             </h2>
             <p className="mb-4">

@@ -3,6 +3,7 @@ import AnimeCard from '@/components/anime/AnimeCard';
 import ListFilters from '@/components/anime/ListFilters';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Star, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default async function ListPage({
   searchParams,
@@ -94,7 +95,7 @@ export default async function ListPage({
                     {anime.format}
                   </span>
                   <div className="flex items-center gap-1 text-yellow-500 text-[10px] font-black">
-                    <i className="fa-solid fa-star"></i>
+                    <Star className="w-3 h-3 fill-current" />
                     <span>{anime.rating}</span>
                   </div>
                   <span className="text-[10px] text-slate-500 font-bold uppercase">{anime.year} • {anime.status}</span>
@@ -115,7 +116,7 @@ export default async function ListPage({
               {/* Play Button - Fixed Circle */}
               <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center justify-center">
                 <div className="w-12 h-12 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:scale-110 transition-all shadow-xl group-hover:shadow-blue-600/20">
-                  <i className="fa-solid fa-play text-white text-xs ml-1"></i>
+                  <Play className="w-4 h-4 text-white fill-current ml-0.5" />
                 </div>
               </div>
             </Link>
@@ -129,9 +130,10 @@ export default async function ListPage({
         {page > 1 && (
           <Link
             href={`${paginationBaseUrl}&page=${page - 1}`}
+            aria-label="Página anterior"
             className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white transition-all"
           >
-            <i className="fa-solid fa-chevron-left text-xs"></i>
+            <ChevronLeft className="w-4 h-4" />
           </Link>
         )}
 
@@ -159,9 +161,10 @@ export default async function ListPage({
         {pageInfo?.hasNextPage && (
           <Link
             href={`${paginationBaseUrl}&page=${page + 1}`}
+            aria-label="Próxima página"
             className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-900 border border-white/5 text-white/50 hover:text-white transition-all"
           >
-            <i className="fa-solid fa-chevron-right text-xs"></i>
+            <ChevronRight className="w-4 h-4" />
           </Link>
         )}
       </div>

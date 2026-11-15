@@ -1,4 +1,14 @@
 import Link from 'next/link';
+import { 
+  Info, 
+  Database, 
+  ShieldCheck, 
+  Target, 
+  Mail, 
+  Tv, 
+  Server, 
+  HelpCircle 
+} from 'lucide-react';
 
 export default function SobrePage() {
   return (
@@ -17,7 +27,7 @@ export default function SobrePage() {
         <div className="grid gap-12 text-lg leading-relaxed text-slate-300">
           <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl backdrop-blur-xl">
             <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
-              <i className="fa-solid fa-circle-info text-blue-500"></i>
+              <Info className="w-6 h-6 text-blue-500" />
               O que é o Anime House?
             </h2>
             <p className="mb-6">
@@ -31,7 +41,7 @@ export default function SobrePage() {
           <section className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                <i className="fa-solid fa-database text-blue-500"></i>
+                <Database className="w-5 h-5 text-blue-500" />
                 Tecnologia e Dados
               </h3>
               <p className="text-base text-slate-400">
@@ -40,7 +50,7 @@ export default function SobrePage() {
             </div>
             <div className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                <i className="fa-solid fa-shield-halved text-blue-500"></i>
+                <ShieldCheck className="w-5 h-5 text-blue-500" />
                 Compromisso Legal
               </h3>
               <p className="text-base text-slate-400">
@@ -52,7 +62,7 @@ export default function SobrePage() {
           <section className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                <i className="fa-solid fa-bullseye text-blue-500"></i>
+                <Target className="w-5 h-5 text-blue-500" />
                 Nossa Missão
               </h3>
               <p className="text-base text-slate-400">
@@ -61,7 +71,7 @@ export default function SobrePage() {
             </div>
             <div className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                <i className="fa-solid fa-envelope text-blue-500"></i>
+                <Mail className="w-5 h-5 text-blue-500" />
                 Contato e Suporte
               </h3>
               <p className="text-base text-slate-400">
@@ -73,7 +83,7 @@ export default function SobrePage() {
 
           <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
             <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-              <i className="fa-solid fa-tv text-blue-500"></i>
+              <Tv className="w-5 h-5 text-blue-500" />
               Onde Assistir Oficialmente?
             </h2>
             <p className="text-slate-400 mb-8 leading-relaxed">
@@ -115,7 +125,7 @@ export default function SobrePage() {
 
           <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
             <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-              <i className="fa-solid fa-server text-blue-500"></i>
+              <Server className="w-5 h-5 text-blue-500" />
               Nossas Fontes de Dados
             </h2>
             <p className="text-slate-400 mb-8 leading-relaxed">
@@ -154,7 +164,7 @@ export default function SobrePage() {
 
           <section className="bg-slate-900/50 border border-white/5 p-8 rounded-3xl">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <i className="fa-solid fa-question-circle text-blue-500"></i>
+              <HelpCircle className="w-5 h-5 text-blue-500" />
               Perguntas Frequentes
             </h2>
             <div className="space-y-6">

@@ -542,7 +542,7 @@ export const AniListAPI = {
       variables = { search: idStr.replace(/-/g, ' ') };
     }
 
-    const data = await this.query(gql, variables, undefined, true); // Force refresh para garantir novos campos (Seasons)
+    const data = await this.query(gql, variables, undefined, false); // Habilita cache ISR/memória para máxima velocidade
     const anime = this.mapAniListToInternal(data?.Media);
 
     if (anime && data?.Media) {
@@ -730,15 +730,18 @@ export const AniListAPI = {
       }
     }`;
 
-    let allSchedules: any[] = [];
+    // Buscar 3 páginas em paralelo para cobrir a semana toda (~150 animes) sem waterfall
+    const pagesData = await Promise.all([
+      this.query(gql, { start, end, page: 1 }),
+      this.query(gql, { start, end, page: 2 }),
+      this.query(gql, { start, end, page: 3 }),
+    ]);
 
-    // Buscar 3 páginas para cobrir a semana toda (~150 animes)
-    for (let p = 1; p <= 3; p++) {
-      const data = await this.query(gql, { start, end, page: p });
+    let allSchedules: any[] = [];
+    pagesData.forEach((data) => {
       const pageSchedules = data?.Page?.airingSchedules || [];
-      allSchedules = [...allSchedules, ...pageSchedules];
-      if (pageSchedules.length < 50) break;
-    }
+      allSchedules = allSchedules.concat(pageSchedules);
+    });
 
     return allSchedules
       .filter((item: any) => item.media)
