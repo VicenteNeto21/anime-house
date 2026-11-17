@@ -1,8 +1,12 @@
 /**
- * EMBED_PROVIDERS // LIB_EMBEDS v1.0
+ * EMBED_PROVIDERS // LIB_EMBEDS v4.0
  *
- * Provedores de embed para player de vídeo.
- * Suporta EmbedPlay API e Fembed API.
+ * Múltiplos provedores de streaming de vídeo:
+ * - Provedor 1: EmbedPlay Oficial (embedplayapi.top) - TMDB/IMDB VIP
+ * - Provedor 2: Player Ultra HLS Direto (ArtPlayer)
+ * - Provedor 3: SuperFlix (Dub/Leg)
+ * - Provedor 4: Vidsrc (Global)
+ * - Provedor P2P: Webtor (Torrent)
  */
 
 export type AudioOption = 'default' | 'dub' | 'leg';
@@ -10,7 +14,7 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'embedplay' | 'fembed' | 'vidsrc' | 'anroll' | 'consumet' | 'autoembed' | 'superembed' | 'meusanimes' | 'superflix' | 'xyz' | 'warezcdn' | 'imagesskill' | 'hls' | 'webtor' | 'pixelsus';
+  provider: 'embedplay' | 'maximaimg' | 'superflix' | 'vidsrc' | 'webtor' | string;
   url: string;
   server?: string;
   audioLabel?: string;
@@ -19,131 +23,60 @@ export interface EmbedSource {
 }
 
 // ─────────────────────────────────────────────
-// Pixel Sus API (cdn-s01.pixel-sus-4k-image.com)
+// 1. EmbedPlay Oficial API (embedplayapi.top)
 // ─────────────────────────────────────────────
-export const PixelSusAPI = {
-  getEpisodeUrl(slug: string, episode = 1): string {
-    const epPad = episode.toString().padStart(2, '0');
-    const firstLetter = slug.charAt(0).toLowerCase();
-    return `https://cdn-s01.pixel-sus-4k-image.com/stream/${firstLetter}/${slug}/${epPad}.mp4`;
-  }
-};
-
-// ─────────────────────────────────────────────
-// ImagesSkill HLS API (cdn.imagesskill.com)
-// ─────────────────────────────────────────────
-export const ImagesSkillAPI = {
-  getEpisodeUrl(slug: string, episode = 1): string {
-    const epPad = episode.toString().padStart(2, '0');
-    return `https://cdn.imagesskill.com/stream/f/${slug}/${epPad}.mp4/index.m3u8`;
-  }
-};
-
-// ─────────────────────────────────────────────
-// AutoEmbed & SuperEmbed API
-// ─────────────────────────────────────────────
-export const AutoEmbedAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://autoembed.to/tv/tmdb/${tmdbId}-${season}-${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://autoembed.to/movie/tmdb/${tmdbId}`;
-  }
-};
-
-export const SuperEmbedAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://multiembed.mov/directstream.php?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://multiembed.mov/directstream.php?video_id=${tmdbId}&tmdb=1`;
-  }
-};
-
-// ─────────────────────────────────────────────
-// SuperFlix API
-// ─────────────────────────────────────────────
-export const SuperFlixAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://superflixapi.pro/serie/${tmdbId}/${season}/${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://superflixapi.pro/filme/${tmdbId}`;
-  }
-};
-
-// ─────────────────────────────────────────────
-// XYZ Embed API (1298009.xyz)
-// ─────────────────────────────────────────────
-export const XYZAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://1298009.xyz/serie/${tmdbId}/${season}/${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://1298009.xyz/filme/${tmdbId}`;
-  }
-};
-
-// ─────────────────────────────────────────────
-// WarezCDN API (embed.warezcdn.net)
-// ─────────────────────────────────────────────
-export const WarezCDNAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://embed.warezcdn.net/serie/${tmdbId}/${season}/${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://embed.warezcdn.net/filme/${tmdbId}`;
-  }
-};
-
-// ─────────────────────────────────────────────
-// Vidsrc API
-// ─────────────────────────────────────────────
-export const VidsrcAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://vsembed.su/embed/tv/${tmdbId}/${season}-${episode}?ds_lang=pt`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://vsembed.su/embed/movie/${tmdbId}?ds_lang=pt`;
-  }
-};
-
-
-
-// ─────────────────────────────────────────────
-// EmbedPlay API (embedplayapi.top)
-// ─────────────────────────────────────────────
-
 export const EmbedPlayAPI = {
   baseUrl: 'https://embedplayapi.top',
 
   /**
-   * Gera URL de embed para um episódio de anime/série.
-   * @param tmdbId - TMDB ID do anime
-   * @param season - Temporada (default: 1)
-   * @param episode - Número do episódio
+   * Obtém a URL do player para um episódio específico via TMDB ou IMDB ID
+   * Formato: https://embedplayapi.top/embed/{TMDB_ID}/{SEASON}/{EPISODE}
    */
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `${this.baseUrl}/embed/${tmdbId}/${season}/${episode}`;
+  getEpisodeUrl(tmdbOrImdbId: string | number, season = 1, episode = 1): string {
+    return `https://embedplayapi.top/embed/${tmdbOrImdbId}/${season}/${episode}`;
   },
 
   /**
-   * Gera URL de embed para filme.
+   * Obtém a URL do player para um filme via TMDB ou IMDB ID
+   * Formato: https://embedplayapi.top/embed/{TMDB_ID}
    */
-  getMovieUrl(tmdbId: string | number): string {
-    return `${this.baseUrl}/embed/${tmdbId}`;
+  getMovieUrl(tmdbOrImdbId: string | number): string {
+    return `https://embedplayapi.top/embed/${tmdbOrImdbId}`;
   },
 
   /**
-   * Verifica disponibilidade de uma série/anime.
+   * Retorna a URL para verificar o status de disponibilidade
    */
-  async checkStatus(tmdbId: string | number, season: number, episode: number): Promise<boolean> {
+  getStatusUrl(
+    tmdbId: string | number,
+    season = 1,
+    episode = 1,
+    type: 'movie' | 'tv' = 'tv'
+  ): string {
+    return type === 'movie'
+      ? `https://embedplayapi.top/api/status?tmdb=${tmdbId}&type=movie`
+      : `https://embedplayapi.top/api/status?tmdb=${tmdbId}&sea=${season}&epi=${episode}&type=tv`;
+  },
+
+  /**
+   * Verifica disponibilidade no banco do EmbedPlay
+   */
+  async checkAvailability(
+    tmdbId: string | number,
+    season = 1,
+    episode = 1,
+    type: 'movie' | 'tv' = 'tv'
+  ): Promise<boolean> {
     try {
-      const url = `${this.baseUrl}/api/status?tmdb=${tmdbId}&sea=${season}&epi=${episode}&type=tv`;
-      const response = await fetch(url);
-      if (!response.ok) return false;
-      const data = await response.json();
-      return !!data;
+      const url = EmbedPlayAPI.getStatusUrl(tmdbId, season, episode, type);
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        signal: AbortSignal.timeout(4000),
+        next: { revalidate: 3600 },
+      });
+      if (!res.ok) return false;
+      const json = await res.json();
+      return json?.status === 'success';
     } catch {
       return false;
     }
@@ -151,335 +84,160 @@ export const EmbedPlayAPI = {
 };
 
 // ─────────────────────────────────────────────
-// Fembed API (fembed.sx)
+// 2. MaximaImg Direct HLS API (cdn-sv01.maximaimg.online)
 // ─────────────────────────────────────────────
-
-export const FembedAPI = {
-  baseUrl: 'https://fembed.sx',
-
-  /**
-   * Gera URL de embed para episódio de anime/série.
-   * Suporta seleção de áudio (dub/leg) e servidor fixo.
-   *
-   * @param tmdbId  - TMDB ID
-   * @param season  - Temporada
-   * @param episode - Episódio
-   * @param audio   - 'default' | 'dub' | 'leg'
-   * @param server  - null (seletor) | 1-4 (servidor fixo)
-   */
-  getEpisodeUrl(
-    tmdbId: string | number,
-    season = 1,
-    episode = 1,
-    audio: AudioOption = 'default',
-    server?: number
-  ): string {
-    const audioSuffix = audio !== 'default' ? `-${audio}` : '';
-    const serverSuffix = server ? `/servidor-${server}` : '';
-    return `${this.baseUrl}/e/${tmdbId}${audioSuffix}/${season}-${episode}${serverSuffix}`;
+export const MaximaImgAPI = {
+  getEpisodeUrl(slug: string, episode = 1): string {
+    const epPad = episode.toString().padStart(2, '0');
+    const cleanSlug = slug.toLowerCase().trim();
+    const firstLetter = (cleanSlug.charAt(0) || 'a').toLowerCase();
+    return `https://cdn-sv01.maximaimg.online/stream/${firstLetter}/${cleanSlug}/${epPad}.mp4/index.m3u8`;
   },
-
-  /**
-   * Gera URL de embed para filme.
-   */
-  getMovieUrl(
-    tmdbId: string | number,
-    audio: AudioOption = 'default',
-    server?: number
-  ): string {
-    const audioSuffix = audio !== 'default' ? `-${audio}` : '';
-    const serverSuffix = server ? `/servidor-${server}` : '';
-    return `${this.baseUrl}/e/${tmdbId}${audioSuffix}${serverSuffix}`;
-  },
-
-  /** Nomes dos servidores para UI */
-  serverNames: {
-    1: 'Principal',
-    2: 'SuperFlix',
-    3: 'MyEmbed',
-    4: 'English',
-  } as Record<number, string>,
 };
 
 // ─────────────────────────────────────────────
-// Gerador de fontes para o Player
+// 3. SuperFlix API (superflixapi.pro)
 // ─────────────────────────────────────────────
+export const SuperFlixAPI = {
+  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
+    return `https://superflixapi.pro/serie/${tmdbId}/${season}/${episode}`;
+  },
+  getMovieUrl(tmdbId: string | number): string {
+    return `https://superflixapi.pro/filme/${tmdbId}`;
+  },
+};
+
+// ─────────────────────────────────────────────
+// 4. Vidsrc API (vidsrc.to)
+// ─────────────────────────────────────────────
+export const VidsrcAPI = {
+  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
+    return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
+  },
+  getMovieUrl(tmdbId: string | number): string {
+    return `https://vidsrc.to/embed/movie/${tmdbId}`;
+  },
+};
 
 /**
- * Gera todas as fontes de embed disponíveis para um episódio.
- * Retorna uma lista flat de EmbedSource para popular o seletor de servidor.
+ * Gera todas as fontes de streaming disponíveis para o episódio.
+ * EmbedPlay Oficial (embedplayapi.top) tem prioridade principal com TMDB ID.
  */
 export function getEmbedSources(
-  tmdbId: string | number,
+  tmdbId: string | number = '',
   season = 1,
   episode = 1,
-  _audio: AudioOption = 'default',
-  slug?: string
+  audio: AudioOption = 'default',
+  slug?: string,
+  imdbId?: string
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
 
-  /*
-  // 0. MeusAnimes (DooPlay Extractor) - OFF
-  if (slug) {
-    sources.push({
-      id: 'meusanimes',
-      name: 'MeusAnimes (DooPlay)',
-      provider: 'meusanimes',
-      url: `/api/extractor/dooplay?url=https://meusanimes.blog/e/${slug}-${episode}/`,
-      type: 'iframe',
-      isAsync: true,
-    });
-  }
-  */
+  const mainId = tmdbId || imdbId;
 
-  // 0. Pixel Sus (Sushi Animes - MP4 Direto)
-  if (slug) {
-    sources.push({
-      id: 'pixelsus',
-      name: 'Player Sushi (MP4 Direto)',
-      provider: 'pixelsus',
-      url: PixelSusAPI.getEpisodeUrl(slug, episode),
-      type: 'video',
-    });
-  }
-
-  // 0. Player HLS Direct Stream (Ultra Rápido)
-  if (slug) {
-    sources.push({
-      id: 'imagesskill',
-      name: 'Player Ultra HLS (Sem Anúncios)',
-      provider: 'imagesskill',
-      url: ImagesSkillAPI.getEpisodeUrl(slug, episode),
-      type: 'video',
-    });
-  }
-
-  // 1. EmbedPlay (fonte principal)
-  if (tmdbId) {
+  // 1. Provedor Primário Recomendado: EmbedPlay Oficial (embedplayapi.top)
+  if (mainId) {
     sources.push({
       id: 'embedplay',
-      name: 'Player Principal (Rápido)',
+      name: 'EmbedPlay (Oficial VIP)',
       provider: 'embedplay',
-      url: EmbedPlayAPI.getEpisodeUrl(tmdbId, season, episode),
+      url: EmbedPlayAPI.getEpisodeUrl(mainId, season, episode),
+      audioLabel: 'AUTO',
+      type: 'iframe',
     });
+
+    // Se a temporada for maior que 1, adiciona também a opção da Temporada 1
+    // (Muitos catálogos de animes como Netflix/TMDB agrupam cours na Temporada 1)
+    if (season > 1) {
+      sources.push({
+        id: 'embedplay-s1',
+        name: 'EmbedPlay (Temporada 1)',
+        provider: 'embedplay',
+        url: EmbedPlayAPI.getEpisodeUrl(mainId, 1, episode),
+        audioLabel: 'AUTO',
+        type: 'iframe',
+      });
+    }
   }
 
-  /*
-  // 2. Fembed — OFF
-  sources.push({
-    id: 'fembed',
-    name: 'Player Multi-Opções',
-    provider: 'fembed',
-    url: FembedAPI.getEpisodeUrl(tmdbId, season, episode, audio),
-  });
-
-  // 3. Fembed Servidores — OFF
-  for (let s = 1; s <= 4; s++) {
-    const serverAudio = s === 1 ? audio : 'default';
+  // 2. Provedor Secundário: Stream Direto HLS (Sem Anúncios / ArtPlayer)
+  if (slug) {
     sources.push({
-      id: `fembed-s${s}`,
-      name: `Servidor F${s}`,
-      provider: 'fembed',
-      url: FembedAPI.getEpisodeUrl(tmdbId, season, episode, serverAudio, s),
-      server: FembedAPI.serverNames[s],
+      id: 'maximaimg',
+      name: 'Player Ultra HLS (Sem Anúncios)',
+      provider: 'maximaimg',
+      url: MaximaImgAPI.getEpisodeUrl(slug, episode),
+      audioLabel: audio === 'dub' ? 'DUB' : 'LEG',
+      type: 'video',
     });
   }
 
-  // 4. Vidsrc - OFF
-  sources.push({
-    id: 'vidsrc',
-    name: 'Player Global',
-    provider: 'vidsrc',
-    url: VidsrcAPI.getEpisodeUrl(tmdbId, season, episode),
-    type: 'iframe',
-  });
-  */
-
-  // 4.1. AutoEmbed (Desativado - API offline)
-  /*
-  sources.push({
-    id: 'autoembed',
-    name: 'Player Secundário',
-    provider: 'autoembed',
-    url: AutoEmbedAPI.getEpisodeUrl(tmdbId, season, episode),
-    type: 'iframe',
-  });
-  */
-
-  /*
-  // 4.2. SuperEmbed - OFF
-  sources.push({
-    id: 'superembed',
-    name: 'Player Ultra',
-    provider: 'superembed',
-    url: SuperEmbedAPI.getEpisodeUrl(tmdbId, season, episode),
-    type: 'iframe',
-  });
-  */
-
-  // 4.3. SuperFlix (Tentativa de correção / Mantido conforme solicitado)
+  // 3. Provedor Terciário: SuperFlix (Dublado / Legendado)
   if (tmdbId) {
     sources.push({
       id: 'superflix',
-      name: 'SuperFlix (VIP)',
+      name: 'Servidor 3 (SuperFlix)',
       provider: 'superflix',
       url: SuperFlixAPI.getEpisodeUrl(tmdbId, season, episode),
+      audioLabel: audio === 'dub' ? 'DUB' : 'LEG',
       type: 'iframe',
     });
   }
 
-  /*
-  // 4.4. XYZ Player - OFF
-  sources.push({
-    id: 'xyz',
-    name: 'Player Alternativo',
-    provider: 'xyz',
-    url: XYZAPI.getEpisodeUrl(tmdbId, season, episode),
-    type: 'iframe',
-  });
-  */
-
-  // 4.5. WarezCDN (Desativado - API offline)
-  /*
-  sources.push({
-    id: 'warezcdn',
-    name: 'WarezCDN (Dub/Leg)',
-    provider: 'warezcdn',
-    url: WarezCDNAPI.getEpisodeUrl(tmdbId, season, episode),
-    type: 'iframe',
-  });
-  */
-
-  // 5. Anroll (Async) - Desativado (API backend não implementada)
-  /*
-  if (slug) {
+  // 4. Provedor Quaternário: Vidsrc Global
+  if (mainId) {
     sources.push({
-      id: 'anroll',
-      name: 'Anroll (Nacional)',
-      provider: 'anroll',
-      url: '',
+      id: 'vidsrc',
+      name: 'Servidor 4 (Vidsrc Global)',
+      provider: 'vidsrc',
+      url: VidsrcAPI.getEpisodeUrl(mainId, season, episode),
+      audioLabel: 'LEG',
       type: 'iframe',
-      isAsync: true,
     });
   }
-  */
-
-  // 6. Consumet (Async) - Desativado (API pública offline/451)
-  /*
-  sources.push({
-    id: 'consumet',
-    name: 'Consumet API',
-    provider: 'consumet',
-    url: '',
-    type: 'video',
-    isAsync: true,
-  });
-  */
 
   return sources;
 }
 
 /**
- * Gera fontes de embed para um filme.
+ * Fontes para filmes
  */
 export function getMovieEmbedSources(
-  tmdbId: string | number,
-  _audio: AudioOption = 'default'
+  tmdbId: string | number = '',
+  _audio: AudioOption = 'default',
+  slug?: string
 ): EmbedSource[] {
   const sources: EmbedSource[] = [];
 
   if (tmdbId) {
     sources.push({
       id: 'embedplay',
-      name: 'Player Principal (Rápido)',
+      name: 'EmbedPlay (Oficial VIP)',
       provider: 'embedplay',
       url: EmbedPlayAPI.getMovieUrl(tmdbId),
+      type: 'iframe',
     });
   }
 
-  /*
-  sources.push({
-    id: 'fembed',
-    name: 'Player Multi-Opções',
-    provider: 'fembed',
-    url: FembedAPI.getMovieUrl(tmdbId, audio),
-  });
-
-  for (let s = 1; s <= 4; s++) {
-    const serverAudio = s === 1 ? audio : 'default';
+  if (slug) {
     sources.push({
-      id: `fembed-s${s}`,
-      name: `Servidor F${s}`,
-      provider: 'fembed',
-      url: FembedAPI.getMovieUrl(tmdbId, serverAudio, s),
-      server: FembedAPI.serverNames[s],
+      id: 'maximaimg',
+      name: 'Player Ultra HLS (Sem Anúncios)',
+      provider: 'maximaimg',
+      url: MaximaImgAPI.getEpisodeUrl(slug, 1),
+      type: 'video',
     });
   }
 
-  // 4. Vidsrc
-  sources.push({
-    id: 'vidsrc',
-    name: 'Player Global',
-    provider: 'vidsrc',
-    url: VidsrcAPI.getMovieUrl(tmdbId),
-    type: 'iframe',
-  });
-  */
-
-  // 4.1. AutoEmbed (Desativado - API offline)
-  /*
-  sources.push({
-    id: 'autoembed',
-    name: 'Player Secundário',
-    provider: 'autoembed',
-    url: AutoEmbedAPI.getMovieUrl(tmdbId),
-    type: 'iframe',
-  });
-  */
-
-  /*
-  // 4.2. SuperEmbed
-  sources.push({
-    id: 'superembed',
-    name: 'Player Ultra',
-    provider: 'superembed',
-    url: SuperEmbedAPI.getMovieUrl(tmdbId),
-    type: 'iframe',
-  });
-  */
-
-  // 4.3. SuperFlix
   if (tmdbId) {
     sources.push({
       id: 'superflix',
-      name: 'SuperFlix (VIP)',
+      name: 'Servidor 3 (SuperFlix)',
       provider: 'superflix',
       url: SuperFlixAPI.getMovieUrl(tmdbId),
       type: 'iframe',
     });
   }
-
-  /*
-  // 4.4. XYZ Player
-  sources.push({
-    id: 'xyz',
-    name: 'Player Alternativo',
-    provider: 'xyz',
-    url: XYZAPI.getMovieUrl(tmdbId),
-    type: 'iframe',
-  });
-  */
-
-  // 4.5. WarezCDN (Desativado - API offline)
-  /*
-  sources.push({
-    id: 'warezcdn',
-    name: 'WarezCDN (Dub/Leg)',
-    provider: 'warezcdn',
-    url: WarezCDNAPI.getMovieUrl(tmdbId),
-    type: 'iframe',
-  });
-  */
 
   return sources;
 }

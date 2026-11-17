@@ -932,15 +932,26 @@ export const MyAnimeListAPI = {
 };
 
 export const TMDBAPI = {
-  async findIdByTitle(title: string) {
+  async findIdByTitle(title: string, anilistId?: number | string): Promise<{ id: number | string; imdbId?: string; season?: number } | null> {
     const cleanTitle = title.replace(/\(\d{4}\)/g, '').trim();
-    const url = `/api/tmdb/search?query=${encodeURIComponent(cleanTitle)}`;
+    const params = new URLSearchParams();
+    if (anilistId) params.set('anilistId', String(anilistId));
+    params.set('query', cleanTitle);
+
+    const url = `/api/tmdb/search?${params.toString()}`;
 
     try {
       const response = await fetch(url);
       const data = await response.json();
-      const result = data.results?.find((r: any) => r.media_type === 'tv' || r.media_type === 'movie');
-      return result ? result.id : null;
+      const result = data.results?.find((r: any) => r.media_type === 'tv' || r.media_type === 'movie' || r.id);
+      if (result && result.id) {
+        return {
+          id: result.id,
+          imdbId: result.imdb_id,
+          season: result.season || 1,
+        };
+      }
+      return null;
     } catch (e) {
       console.error('TMDB_SEARCH_ERROR:', e);
       return null;
