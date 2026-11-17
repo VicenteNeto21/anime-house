@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -60,13 +61,15 @@ export default function PlayerPage() {
 
   const [anime, setAnime] = useState<Anime | null>(null);
   const [tmdbId, setTmdbId] = useState<string | number | null>(null);
+  const [imdbId, setImdbId] = useState<string | null>(null);
+  const [tmdbSeason, setTmdbSeason] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [tmdbLoading, setTmdbLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Player state
   const [sources, setSources] = useState<EmbedSource[]>([]);
-  const [activeSource, setActiveSource] = useState<string>('maximaimg');
+  const [activeSource, setActiveSource] = useState<string>('embedplay');
   const [audio, setAudio] = useState<AudioOption>('leg');
   const [showServerMenu, setShowServerMenu] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -113,6 +116,16 @@ export default function PlayerPage() {
     const findTmdbId = async () => {
       setTmdbLoading(true);
       try {
+        // 1. Tentar primeiro busca com AniList ID direto (mapeamento Fribb/anime-lists sem necessidade de API key)
+        const directResult = await TMDBAPI.findIdByTitle(anime.title, animeIdNum);
+        if (directResult?.id) {
+          setTmdbId(directResult.id);
+          if (directResult.imdbId) setImdbId(directResult.imdbId);
+          if (directResult.season) setTmdbSeason(directResult.season);
+          return;
+        }
+
+        // 2. Fallback para os títulos alternativos
         const titles = [
           anime.titleRomaji,
           anime.titleEnglish,
@@ -120,9 +133,11 @@ export default function PlayerPage() {
         ].filter(Boolean) as string[];
 
         for (const title of titles) {
-          const foundId = await TMDBAPI.findIdByTitle(title);
-          if (foundId) {
-            setTmdbId(foundId);
+          const res = await TMDBAPI.findIdByTitle(title);
+          if (res?.id) {
+            setTmdbId(res.id);
+            if (res.imdbId) setImdbId(res.imdbId);
+            if (res.season) setTmdbSeason(res.season);
             return;
           }
         }
@@ -135,19 +150,28 @@ export default function PlayerPage() {
     };
 
     findTmdbId();
-  }, [anime]);
+  }, [anime, animeIdNum]);
 
   // 3. Update streaming sources
   useEffect(() => {
     if (!anime) return;
     const effectiveSlug = slug || AniListAPI.slugify(anime.titleRomaji || anime.titleEnglish || anime.title);
-    const streamSources = getEmbedSources(tmdbId || '', 1, currentEp, audio, effectiveSlug);
-    if (streamSources.length > 0 && !streamSources.find((s) => s.id === activeSource)) {
-      setActiveSource(streamSources[0].id);
+    const streamSources = getEmbedSources(
+      tmdbId || '',
+      tmdbSeason,
+      currentEp,
+      audio,
+      effectiveSlug,
+      imdbId || undefined
+    );
+    if (streamSources.length > 0) {
+      if (!streamSources.find((s) => s.id === activeSource) || ((tmdbId || imdbId) && activeSource === 'maximaimg')) {
+        setActiveSource(streamSources[0].id);
+      }
     }
     setSources(streamSources);
     setIframeKey((prev) => prev + 1);
-  }, [anime, slug, tmdbId, currentEp, audio]);
+  }, [anime, slug, tmdbId, imdbId, tmdbSeason, currentEp, audio, activeSource]);
 
   // 4. Save watch history
   useEffect(() => {
@@ -348,7 +372,7 @@ export default function PlayerPage() {
                   className="absolute inset-0 w-full h-full"
                   allowFullScreen
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                  sandbox="allow-scripts allow-forms allow-presentation allow-popups"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                   title={`${anime.title} - Episódio ${currentEp}`}
                 />
               )}
