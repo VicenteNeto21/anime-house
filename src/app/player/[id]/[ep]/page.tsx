@@ -69,7 +69,7 @@ export default function PlayerPage() {
 
   // Player state
   const [sources, setSources] = useState<EmbedSource[]>([]);
-  const [activeSource, setActiveSource] = useState<string>('embedplay');
+  const [activeSource, setActiveSource] = useState<string>('streambetter');
   const [audio, setAudio] = useState<AudioOption>('leg');
   const [showServerMenu, setShowServerMenu] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -119,9 +119,35 @@ export default function PlayerPage() {
         // 1. Tentar primeiro busca com AniList ID direto (mapeamento Fribb/anime-lists sem necessidade de API key)
         const directResult = await TMDBAPI.findIdByTitle(anime.title, animeIdNum);
         if (directResult?.id) {
+          let resolvedSeason = directResult.season || 1;
+          // Se a temporada mapeada for > 1, verificar se o episódio existe nessa temporada ou na Temporada 1
+          if (resolvedSeason > 1) {
+            try {
+              const checkRes = await fetch(
+                `/api/embedplay/status?tmdb=${directResult.id}&sea=${resolvedSeason}&epi=${currentEp}&type=tv`
+              );
+              if (checkRes.ok) {
+                const checkData = await checkRes.json();
+                if (!checkData.available) {
+                  // Se temporada > 1 não tem fonte, testar se está agrupada na Temporada 1
+                  const s1Res = await fetch(
+                    `/api/embedplay/status?tmdb=${directResult.id}&sea=1&epi=${currentEp}&type=tv`
+                  );
+                  if (s1Res.ok) {
+                    const s1Data = await s1Res.json();
+                    if (s1Data.available) {
+                      resolvedSeason = 1;
+                    }
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('Erro ao verificar disponibilidade de temporada:', err);
+            }
+          }
           setTmdbId(directResult.id);
           if (directResult.imdbId) setImdbId(directResult.imdbId);
-          if (directResult.season) setTmdbSeason(directResult.season);
+          setTmdbSeason(resolvedSeason);
           return;
         }
 
@@ -135,9 +161,25 @@ export default function PlayerPage() {
         for (const title of titles) {
           const res = await TMDBAPI.findIdByTitle(title);
           if (res?.id) {
+            let fallbackSeason = res.season || 1;
+            if (fallbackSeason > 1) {
+              try {
+                const checkRes = await fetch(
+                  `/api/embedplay/status?tmdb=${res.id}&sea=${fallbackSeason}&epi=${currentEp}&type=tv`
+                );
+                if (checkRes.ok) {
+                  const checkData = await checkRes.json();
+                  if (!checkData.available) {
+                    fallbackSeason = 1;
+                  }
+                }
+              } catch {
+                fallbackSeason = 1;
+              }
+            }
             setTmdbId(res.id);
             if (res.imdbId) setImdbId(res.imdbId);
-            if (res.season) setTmdbSeason(res.season);
+            setTmdbSeason(fallbackSeason);
             return;
           }
         }
@@ -150,7 +192,7 @@ export default function PlayerPage() {
     };
 
     findTmdbId();
-  }, [anime, animeIdNum]);
+  }, [anime, animeIdNum, currentEp]);
 
   // 3. Update streaming sources
   useEffect(() => {
@@ -212,6 +254,51 @@ export default function PlayerPage() {
     loadSkipTimes();
   }, [anime, currentEp]);
 
+  // Episode navigation
+  const totalEps = Number(anime?.episodesReleased) || Number(anime?.episodes) || currentEp;
+  const hasPrev = currentEp > 1;
+  const hasNext = currentEp < totalEps;
+  const goToEp = useCallback((ep: number) => {
+    setShowNextCountdown(false);
+    router.push(`/player/${id}/${ep}`);
+  }, [id, router]);
+
+  const handleVideoEnded = useCallback(() => {
+    if (hasNext) {
+      setShowNextCountdown(true);
+    }
+  }, [hasNext]);
+
+  // 7. StreamBetter postMessage listener (progresso e autoplay do próximo episódio)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Obrigatório pela documentação StreamBetter: conferir origem segura
+      if (
+        event.origin !== 'https://streambetter.lat' &&
+        event.origin !== 'https://streambetter.shop'
+      ) {
+        return;
+      }
+
+      if (event.data?.type !== 'streambetter:progress') return;
+
+      const { state } = event.data;
+
+      // Se terminou o vídeo, ativa contagem regressiva para o próximo episódio
+      if (state === 'ended') {
+        handleVideoEnded();
+      } else if (anime) {
+        WatchHistory.save(
+          { id: anime.id, title: anime.title, poster: anime.poster, format: anime.format },
+          currentEp
+        );
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [anime, currentEp, handleVideoEnded]);
+
   // Display sources with optional active Torrent
   const displaySources: EmbedSource[] = webtorMagnet
     ? [
@@ -229,21 +316,6 @@ export default function PlayerPage() {
 
   const currentSource = displaySources.find((s) => s.id === activeSource) || displaySources[0];
   const currentUrl = currentSource?.url;
-
-  // Episode navigation
-  const totalEps = Number(anime?.episodesReleased) || Number(anime?.episodes) || currentEp;
-  const hasPrev = currentEp > 1;
-  const hasNext = currentEp < totalEps;
-  const goToEp = useCallback((ep: number) => {
-    setShowNextCountdown(false);
-    router.push(`/player/${id}/${ep}`);
-  }, [id, router]);
-
-  const handleVideoEnded = useCallback(() => {
-    if (hasNext) {
-      setShowNextCountdown(true);
-    }
-  }, [hasNext]);
 
   // Handle server source change
   const handleSourceChange = (sourceId: string) => {
@@ -364,7 +436,7 @@ export default function PlayerPage() {
                   autoPlay={false}
                 />
               ) : (
-                /* External Sandboxed Embed */
+                /* External Embed (Sem sandbox para StreamBetter e EmbedPlay para evitar bloqueio) */
                 <iframe
                   key={iframeKey}
                   ref={iframeRef}
@@ -372,7 +444,12 @@ export default function PlayerPage() {
                   className="absolute inset-0 w-full h-full"
                   allowFullScreen
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+                  sandbox={
+                    currentSource?.provider === 'streambetter' || currentSource?.provider === 'embedplay'
+                      ? undefined
+                      : 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups'
+                  }
+                  data-sb-embed={currentSource?.provider === 'streambetter' ? true : undefined}
                   title={`${anime.title} - Episódio ${currentEp}`}
                 />
               )}
