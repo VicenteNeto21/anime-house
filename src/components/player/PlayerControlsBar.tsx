@@ -170,8 +170,16 @@ export default function PlayerControlsBar({
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            s.provider === 'webtor' ? 'bg-indigo-400' : 'bg-blue-500'
+                          className={`w-2 h-2 rounded-full ${
+                            s.provider === 'streambetter'
+                              ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'
+                              : s.provider === 'embedplay'
+                              ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+                              : s.provider === 'webtor'
+                              ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.6)]'
+                              : s.provider === 'maximaimg'
+                              ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]'
+                              : 'bg-blue-500'
                           }`}
                         />
                         <span className="truncate">{s.name}</span>
