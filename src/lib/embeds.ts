@@ -1,12 +1,10 @@
 /**
- * EMBED_PROVIDERS // LIB_EMBEDS v4.1
+ * EMBED_PROVIDERS // LIB_EMBEDS v4.2
  *
- * Múltiplos provedores de streaming de vídeo:
+ * Provedores selecionados de alta qualidade:
  * - Provedor 1: StreamBetter Oficial (streambetter.shop) - TMDB VIP Multi-Fontes
  * - Provedor 2: EmbedPlay Oficial (embedplayapi.top) - TMDB/IMDB VIP
  * - Provedor 3: Player Ultra HLS Direto (ArtPlayer)
- * - Provedor 4: SuperFlix (Dub/Leg)
- * - Provedor 5: Vidsrc (Global)
  * - Provedor P2P: Webtor (Torrent)
  */
 
@@ -15,7 +13,7 @@ export type AudioOption = 'default' | 'dub' | 'leg';
 export interface EmbedSource {
   id: string;
   name: string;
-  provider: 'streambetter' | 'embedplay' | 'maximaimg' | 'superflix' | 'vidsrc' | 'webtor' | string;
+  provider: 'streambetter' | 'embedplay' | 'maximaimg' | 'webtor' | string;
   url: string;
   server?: string;
   audioLabel?: string;
@@ -135,38 +133,12 @@ export const MaximaImgAPI = {
   },
 };
 
-// ─────────────────────────────────────────────
-// 3. SuperFlix API (superflixapi.pro)
-// ─────────────────────────────────────────────
-export const SuperFlixAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://superflixapi.pro/serie/${tmdbId}/${season}/${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://superflixapi.pro/filme/${tmdbId}`;
-  },
-};
-
-// ─────────────────────────────────────────────
-// 4. Vidsrc API (vidsrc.to)
-// ─────────────────────────────────────────────
-export const VidsrcAPI = {
-  getEpisodeUrl(tmdbId: string | number, season = 1, episode = 1): string {
-    return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
-  },
-  getMovieUrl(tmdbId: string | number): string {
-    return `https://vidsrc.to/embed/movie/${tmdbId}`;
-  },
-};
-
 /**
  * Gera todas as fontes de streaming disponíveis para o episódio.
  * Ordem de prioridade recomendada:
  * 1. StreamBetter Oficial (streambetter.shop) - TMDB VIP Multi-Fontes
  * 2. EmbedPlay Oficial (embedplayapi.top) - TMDB/IMDB VIP
  * 3. Player Ultra HLS (maximaimg) - Direto ArtPlayer
- * 4. SuperFlix (superflixapi.pro)
- * 5. Vidsrc (vidsrc.to)
  */
 export function getEmbedSources(
   tmdbId: string | number = '',
@@ -240,30 +212,6 @@ export function getEmbedSources(
     });
   }
 
-  // 4. Provedor Quaternário: SuperFlix (Dublado / Legendado)
-  if (tmdbId) {
-    sources.push({
-      id: 'superflix',
-      name: 'Servidor 3 (SuperFlix)',
-      provider: 'superflix',
-      url: SuperFlixAPI.getEpisodeUrl(tmdbId, season, episode),
-      audioLabel: audio === 'dub' ? 'DUB' : 'LEG',
-      type: 'iframe',
-    });
-  }
-
-  // 5. Provedor Quinquenário: Vidsrc Global
-  if (mainId) {
-    sources.push({
-      id: 'vidsrc',
-      name: 'Servidor 4 (Vidsrc Global)',
-      provider: 'vidsrc',
-      url: VidsrcAPI.getEpisodeUrl(mainId, season, episode),
-      audioLabel: 'LEG',
-      type: 'iframe',
-    });
-  }
-
   return sources;
 }
 
@@ -302,16 +250,6 @@ export function getMovieEmbedSources(
       provider: 'maximaimg',
       url: MaximaImgAPI.getEpisodeUrl(slug, 1),
       type: 'video',
-    });
-  }
-
-  if (tmdbId) {
-    sources.push({
-      id: 'superflix',
-      name: 'Servidor 3 (SuperFlix)',
-      provider: 'superflix',
-      url: SuperFlixAPI.getMovieUrl(tmdbId),
-      type: 'iframe',
     });
   }
 
